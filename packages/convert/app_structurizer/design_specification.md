@@ -108,25 +108,3 @@ Testing ML systems is notoriously difficult. We cannot run a 10-minute GPU infer
 
 1. **The Test Double (`FakeVisionExtractor`):** A class that satisfies the Protocol but returns hardcoded Markdown instantly.
 2. **C-Level PDF Synthesis:** To test file pointers deterministically, we generate a PDF dynamically in RAM using `PyMuPDF` (a C++ binding). We render vectors, apply heavy JPEG quantization to simulate degraded rasters, and flush it to disk in under a second.
-
-```
-
-### 3. Execution and Version Control
-
-Verify the syntax warning is resolved:
-```bash
-../.venv/bin/python -m pytest tests/test_topology_analyzer.py -v
-
-```
-
-If the run is entirely green, stage and commit the updates:
-
-```bash
-git add app_structurizer/src/domain/services/topology.py
-git add app_structurizer/design_specification.md
-git commit -m "docs(topology): fix docstring escape sequence and expand design monograph
-
-Resolved SyntaxWarning in topology.py by converting LaTeX docstring to a raw string. Updated design_specification.md to comprehensively document the Shannon Entropy H(X) mathematical bounding heuristic used for O(1) layout classification."
-git push
-
-```
