@@ -7,3 +7,5 @@ __pycache__/
 coverage.xml
 *.pdf
 !tests/fixtures/*.pdf
+temp_out/
+output/
