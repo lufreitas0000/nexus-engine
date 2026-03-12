@@ -1,0 +1,11 @@
+# app_structurizer/requirements.in
+# Strict ML dependencies. Mappings from continuous pixel space to discrete AST.
+
+# Marker: The vision-language pipeline for layout detection and OCR
+marker-pdf>=0.3.0
+
+# PyTorch: Underlying tensor operations (C++ ATen backend)
+torch>=2.2.0
+
+# Domain validation
+pydantic>=2.6.0
