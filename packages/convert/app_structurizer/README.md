@@ -30,3 +30,7 @@ Here is what we will implement next in this module:
 1. **Mock/Fake Adapter:** Create `FakeVisionExtractor` in our test suite. This will simulate the ML model so we can build out the rest of the application without needing a GPU.
 2. **Real ML Adapter:** Implement `MarkerVisionAdapter` in `src/adapters/`. This will be the actual code that loads the `marker-pdf` library, passes the PDF to the local neural network, and returns the Markdown.
 3. **Application Service / Use Case:** Write the orchestration function that receives a file path, creates a `RawDocument`, passes it to the extractor, and saves the resulting `MarkdownAST` to disk.
+
+## 5. Infrastructure Adapters (`src/adapters/`)
+This layer contains the concrete implementations of our Interfaces/Ports. 
+* **`MarkerVisionAdapter`:** Uses the `marker-pdf` library. It performs **lazy-loading** of the PyTorch neural networks. This means the multi-gigabyte models are not mapped into the physical memory (RAM/VRAM) until the `extract_ast` function is called for the very first time, strictly preserving system resources.
