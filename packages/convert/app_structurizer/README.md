@@ -1,36 +1,32 @@
 # Domain Specification: App Structurizer
 
-## 1. Theoretical Objective
-The `app_structurizer` bounded context is responsible for a singular mathematical transformation: mapping a continuous spatial tensor (an $H \times W \times C$ pixel matrix representing a PDF page) into a discrete, topologically structured Abstract Syntax Tree (AST) encoded as Markdown. 
+## 1. Objective
+The `app_structurizer` application has one specific job: it takes a raw PDF file (which might just be scanned images of text) and converts it into structured Markdown text.
+
+By using Machine Learning (specifically Vision-Language models like Marker or Nougat), we can "read" the pixels on the page and extract the text, equations, and chapter headings cleanly. Markdown is our chosen output format because it is lightweight, universally understood, and perfectly preserves the hierarchical structure of a book (e.g., `# Chapter 1`, `## Section 1.1`).
 
 ## 2. Core Domain Models (`src/domain/models.py`)
-Our domain state is represented by immutable Data Transfer Objects (DTOs) utilizing standard Python `@dataclass(frozen=True)`. This mimics C-level structs and prevents non-deterministic state mutations during parallel ML processing.
+We use standard Python `@dataclass(frozen=True)` to define our core data structures. Making them `frozen` means they are immutable—once created, they cannot be changed. This prevents accidental bugs where one part of the program modifies data that another part is currently reading.
 
 ### `RawDocument`
-* **Concept:** Represents the input manifold. It acts as a validated pointer to a contiguous byte stream on the physical disk.
-* **Attributes:**
-  * `file_path (Path)`: Absolute filesystem path.
-  * `file_size_bytes (int)`: Memory footprint.
-* **Methods:**
-  * `__post_init__()`: Validates the physical existence of the binary file at runtime instantiation.
-* **Anti-Pattern:** Do **NOT** load the entire byte array into RAM within this class. It is merely a pointer. Defer memory allocation to the specific ML adapter.
+* **What it is:** A pointer to the PDF file on your hard drive.
+* **Why we built it this way:** It only stores the `file_path` and `file_size_bytes`. It deliberately does **not** load the PDF bytes into memory. Loading a 400-page PDF directly into standard RAM before the ML model is ready for it is a massive memory leak risk.
+* **Validation:** It checks if the file actually exists when you create it.
 
-### `MarkdownAST`
-* **Concept:** The discrete output topology. It contains the successfully parsed Markdown string and extracted metadata.
-* **Attributes:**
-  * `content (str)`: The raw Markdown string buffer.
-  * `metadata (dict[str, str])`: Inference metrics (e.g., confidence scores, processing time).
+### `MarkdownAST` (Abstract Syntax Tree)
+* **What it is:** The final output. It holds the extracted text formatted as Markdown.
+* **Data:** Contains the `content` (the actual string of text) and `metadata` (like how long the process took, or confidence scores from the ML model).
 
-## 3. Structural Subtyping (`src/domain/ports.py`)
-We strictly enforce Dependency Inversion via the `VisionExtractor` protocol.
+## 3. Interfaces / Ports (`src/domain/ports.py`)
+To keep our code clean and testable, we separate the "idea" of extracting text from the "actual heavy lifting" using an Interface.
 
 ### `VisionExtractor` (Protocol)
-* **Concept:** A Functor that defines the contract for the forward pass of our neural network. 
-* **Method:** `extract_ast(self, document: RawDocument) -> MarkdownAST`
-* **Design Choice (Why Protocol?):** We use `typing.Protocol` instead of `abc.ABC`. CPython does not need to traverse a deep Method Resolution Order (MRO) tree to check inheritance. It structurally verifies the function signature (Duck Typing). This decouples our pure mathematical logic from heavy C++ machine learning frameworks.
-* **Anti-Pattern:** Do **NOT** import `torch`, `marker-pdf`, or any external infrastructure libraries into the `domain/` directory. The domain dictates the interface; the infrastructure (Adapters) must conform to it.
+* **What it is:** A Python `Protocol` that defines a single method: `extract_ast(document: RawDocument) -> MarkdownAST`.
+* **Why we use it:** We do not want to hardcode PyTorch or Marker directly into our main application logic. By defining this Protocol, we can easily swap out the ML engine in the future without breaking our code.
+* **Testing Benefit:** This allows us to create a "Fake" extractor for our automated tests that just returns a hardcoded Markdown string instantly, rather than waiting 10 minutes for a real neural network to process a PDF during a unit test.
 
-## 4. Usage Heuristics
-* **DO:** Inject specific implementations (e.g., `MarkerVisionAdapter`) into your application services at runtime.
-* **DO NOT:** Mutate the `RawDocument` or `MarkdownAST` instances. If the AST requires refinement, pipe it through a pure function that returns a *new* `MarkdownAST` instance.
-* **DO NOT:** Catch infrastructure-level exceptions (like CUDA Out-Of-Memory errors) inside the domain layer. Let them bubble up to the application orchestrator for retry/reconciliation loops.
+## 4. Next Steps & Implementation Roadmap
+Here is what we will implement next in this module:
+1. **Mock/Fake Adapter:** Create `FakeVisionExtractor` in our test suite. This will simulate the ML model so we can build out the rest of the application without needing a GPU.
+2. **Real ML Adapter:** Implement `MarkerVisionAdapter` in `src/adapters/`. This will be the actual code that loads the `marker-pdf` library, passes the PDF to the local neural network, and returns the Markdown.
+3. **Application Service / Use Case:** Write the orchestration function that receives a file path, creates a `RawDocument`, passes it to the extractor, and saves the resulting `MarkdownAST` to disk.
