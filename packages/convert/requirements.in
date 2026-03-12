@@ -1,0 +1,3 @@
+# Root requirements for orchestration
+invoke>=2.2.0
+EOF
