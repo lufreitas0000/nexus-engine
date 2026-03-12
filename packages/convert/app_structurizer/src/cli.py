@@ -15,6 +15,14 @@ from src.domain.ports import VisionExtractor
 app = typer.Typer(help="Semantic PDF Structurizer: Map continuous PDF tensors to discrete Markdown ASTs.")
 console = Console()
 
+@app.callback()
+def callback():
+    """
+    This empty callback forces Typer to require subcommands (e.g., 'extract').
+    This ensures our CLI scales cleanly when we add more commands later.
+    """
+    pass
+
 def _get_hardware_info() -> str:
     """Probes the local system for hardware accelerators via PyTorch."""
     try:
@@ -33,7 +41,7 @@ def extract(
 ):
     """Executes the extraction pipeline on a target PDF."""
     console.print(Panel(f"Target: [cyan]{file_path}[/cyan]\nOutput: [cyan]{output_dir}[/cyan]", title="Structurizer Engine"))
-    
+
     if not file_path.exists():
         console.print(f"[bold red]Error:[/bold red] File not found at {file_path}")
         raise typer.Exit(code=1)
@@ -47,7 +55,7 @@ def extract(
         hardware = _get_hardware_info()
         console.print(f"Hardware Probed: {hardware}")
         console.print("[dim]Lazy-loading PyTorch weights into memory...[/dim]")
-        
+
         from src.adapters.marker_adapter import MarkerVisionAdapter
         extractor = MarkerVisionAdapter()
         console.print("[green]ML Adapters Loaded.[/green]")
