@@ -88,3 +88,41 @@ When the Python interpreter executes an HTTP request, it opens a network socket.
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+## Chapter 4: The Extraction Boundary and IPC Memory Layout
+
+In high-performance multimodal systems, the transport layer for tensors is a primary bottleneck. We strictly forbid writing intermediate $H \times W \times C$ decoded matrices to non-volatile memory (e.g., NVMe SSDs). Disk I/O introduces unacceptable latency and degrades the lifespan of the storage medium. An uncompressed $1024 \times 1024$ RGB tensor requires approximately $3.1 \text{ MB}$ of memory; constantly serializing and deserializing these matrices to disk is computationally prohibitive.
+
+Instead, the `app_structurizer` dynamically extracts the image into system RAM as a contiguous byte stream (e.g., PNG or JPEG encoded bytes) or a raw NumPy array. The boundary is absolute: the `app_vision_encoder` is a pure functional black box. It possesses zero knowledge of the PDF container format, Cross-Reference (XREF) tables, or pagination. It simply receives an isolated byte array in RAM and returns a discrete UTF-8 semantic string.
+
+## Chapter 5: Topological Image Identification ($Q$-Factor Routing)
+
+To feed the Vision-Language Model, the system must first identify and isolate the physical image tensors from the document. The extraction vector depends entirely on the topological Quality Factor $Q$ computed by the structurizer.
+
+### 5.1 High Quality ($Q \ge 0.95$): Digital Vector Manifolds
+In structurally pure PDFs, images exist as discrete, addressable blocks (`/Type /XObject /Subtype /Image`) within the document's internal XREF table. The structurizer traverses these C-level pointers in $O(1)$ time relative to the text stream. The raw byte payload is copied directly from the PDF container into RAM without any rasterization or rendering of the page itself, preserving the original mathematical encoding of the image.
+
+### 5.2 Low Quality ($Q < 0.95$): Rasterized Scans
+When a document is a monolithic scanned image, the structural boundaries collapse. The entire page is a single matrix. To identify figures, we rely on the structurizer's layout detection model (typically a Convolutional Neural Network or Vision Transformer).
+
+During the pre-computation phase, this network generates spatial bounding boxes $(x_0, y_0, x_1, y_1)$ coupled with class probabilities. When a bounding box is classified as `Figure` or `Equation`, the structurizer mathematically slices that specific sub-tensor from the primary page matrix. This localized crop is then piped to the `app_vision_encoder` for semantic translation.
+
+## Chapter 6: Processing Cardinality and VRAM Constraints
+
+The `app_vision_encoder` enforces a strict processing cardinality: **Batch Size = 1**.
+
+Vision-Language Models (VLMs) operate via autoregressive transformer architectures. During inference, the model must maintain a Key-Value (KV) cache for every token in the sequence to compute self-attention.
+Because high-resolution images are mapped to hundreds or thousands of projection tokens, the memory complexity scales aggressively.
+
+Attempting to process a batch of multiple image tensors simultaneously on standard consumer hardware (e.g., an RTX 3050 with 6GB of VRAM) will instantly exhaust the heap memory, triggering a fatal CUDA Out-Of-Memory (OOM) exception. By strictly enforcing sequential execution (processing one $H \times W \times C$ tensor at a time), we cap the peak VRAM utilization, guaranteeing system stability at the cost of parallel throughput.
+
