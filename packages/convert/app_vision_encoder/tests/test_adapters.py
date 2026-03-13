@@ -5,7 +5,7 @@ Isolated via execution markers to prevent CI/CD hardware exceptions.
 
 import pytest
 import httpx
-import respx
+import respx  # type: ignore
 from pathlib import Path
 
 from src.domain.models import PhysicalImageReference
@@ -25,10 +25,10 @@ def test_external_api_adapter_deterministic_http(physical_image: PhysicalImageRe
             "choices": [{"message": {"content": "Semantic decoding of a mathematical plot."}}]
         })
     )
-    
+
     adapter = ExternalAPIAdapter(api_key="sk-synthetic-key")
     result = adapter.encode_manifold(physical_image)
-    
+
     # Assert the matrix was logically mapped to the mocked \Sigma^* string
     assert result.content == "Semantic decoding of a mathematical plot."
     assert result.metadata["engine"] == "ExternalAPIAdapter"
@@ -41,10 +41,10 @@ def test_local_quantized_adapter_vram_allocation(physical_image: PhysicalImageRe
     Asserts that the 4-bit VLM weights successfully map into VRAM and complete a forward pass.
     """
     from src.adapters.local_quantized import LocalQuantizedAdapter
-    
+
     adapter = LocalQuantizedAdapter()
     result = adapter.encode_manifold(physical_image)
-    
+
     assert isinstance(result.content, str)
     assert len(result.content) > 0
     assert result.metadata["engine"] == "LocalQuantizedAdapter"
