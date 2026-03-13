@@ -1,0 +1,17 @@
+# Infrastructure & State
+__pycache__/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.vscode/
+*.env
+*.log
+
+# Data Artifacts (The primary cause of the 400MB bloat)
+downloads/
+temp/
+extracted/
+*.pdf
+*.zip
+*.tar.gz
+*.archive
