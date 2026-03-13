@@ -30,7 +30,7 @@ def fake_encoder() -> VisionEncoderPort:
 def synthetic_image_tensor() -> Path:
     """
     Synthesizes a minimal H x W x C matrix in RAM and flushes it to disk
-    to simulate the upstream crop artifact.
+    to simulate the upstream crop artifact from the layout detector.
     """
     FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
     out_path = FIXTURE_DIR / "synthetic_graph.png"
@@ -44,6 +44,9 @@ def synthetic_image_tensor() -> Path:
 
 @pytest.fixture
 def physical_image(synthetic_image_tensor: Path) -> PhysicalImageReference:
+    """
+    Instantiates the immutable domain entity pointing to the synthetic tensor.
+    """
     return PhysicalImageReference(
         file_path=synthetic_image_tensor,
         file_size_bytes=synthetic_image_tensor.stat().st_size
