@@ -9,12 +9,9 @@ from src.cli import app
 runner = CliRunner()
 
 def test_cli_encode_with_fake_adapter(synthetic_image_tensor: Path) -> None:
-    """
-    Validates terminal input parsing, dependency injection of the Fake adapter,
-    and the successful flush of the semantic string to stdout in O(1) time.
-    """
+    # Typer collapses the command namespace when only one command exists.
+    # Therefore, we directly pass the arguments.
     result = runner.invoke(app, [
-        "encode",
         str(synthetic_image_tensor),
         "--use-fake"
     ])
@@ -25,12 +22,7 @@ def test_cli_encode_with_fake_adapter(synthetic_image_tensor: Path) -> None:
     assert "FakeAdapter" in result.stdout
 
 def test_cli_fails_gracefully_on_missing_tensor() -> None:
-    """
-    Asserts that the CLI mathematically halts execution if the physical pointer is invalid,
-    preventing null states from propagating to the dependency injection layer.
-    """
     result = runner.invoke(app, [
-        "encode",
         "nonexistent_tensor_artifact.png"
     ])
     

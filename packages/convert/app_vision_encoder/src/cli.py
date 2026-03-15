@@ -20,7 +20,7 @@ def encode(
     image_path: Path = typer.Argument(..., help="Path to the physical image tensor."),
     use_fake: bool = typer.Option(False, "--use-fake", help="Bypass VLM inference, use deterministic Fake adapter."),
     use_api: bool = typer.Option(False, "--use-api", help="Delegate inference to external HTTP API.")
-):
+) -> None:
     """Executes the semantic encoding pipeline on a target physical image tensor."""
     console.print(Panel(f"Target Tensor: [cyan]{image_path}[/cyan]", title="Vision Encoder Engine"))
 
@@ -28,7 +28,6 @@ def encode(
         console.print(f"[bold red]Fatal Error:[/bold red] Tensor artifact not found at {image_path}")
         raise typer.Exit(code=1)
 
-    # 1. Dependency Injection Phase
     encoder: VisionEncoderPort
     if use_fake:
         console.print("[yellow]Notice: Injecting deterministic FakeVisionEncoderAdapter.[/yellow]")
@@ -49,12 +48,11 @@ def encode(
         from src.adapters.local_quantized import LocalQuantizedAdapter
         encoder = LocalQuantizedAdapter()
 
-    # 2. Execution Routing Phase
     try:
-        console.print("[dim]Executing mapping f: R^{H x W x C} -> \\Sigma^* ...[/dim]")
+        console.print(r"[dim]Executing mapping f: R^{H x W x C} -> \Sigma^* ...[/dim]")
         ast_node = generate_semantic_ast_node(image_path=image_path, encoder=encoder)
         
-        console.print("\n[bold green]Discrete \Sigma^* Output:[/bold green]")
+        console.print(r"\n[bold green]Discrete \Sigma^* Output:[/bold green]")
         console.print(ast_node.content)
         console.print(f"\n[dim]Metadata Trace: {ast_node.metadata}[/dim]")
     except Exception as e:

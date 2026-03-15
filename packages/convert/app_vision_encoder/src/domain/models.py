@@ -21,7 +21,7 @@ class PhysicalImageReference:
 
 @dataclass(frozen=True)
 class SemanticDescription:
-    """
+    r"""
     The discrete language representation of the continuous image tensor.
     Maps to the \Sigma^* string space to replace the [ALT Text] structural node.
     """

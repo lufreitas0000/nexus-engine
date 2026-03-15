@@ -7,7 +7,7 @@ from typing import Protocol
 from src.domain.models import PhysicalImageReference, SemanticDescription
 
 class VisionEncoderPort(Protocol):
-    """
+    r"""
     Defines the mathematical mapping f: R^{H x W x C} -> \Sigma^*.
     All ML adapters (quantized local VLMs or external APIs) must satisfy this contract.
     """
