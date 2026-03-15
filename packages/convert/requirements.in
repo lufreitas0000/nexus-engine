@@ -1,3 +1,6 @@
-# Root requirements for orchestration
-invoke>=2.2.0
-EOF
+# Monorepo Global Dependency Graph
+# Maps to the isolated requirements of each bounded context.
+
+-r app_structurizer/requirements.in
+-r app_vision_encoder/requirements.in
+-r app_spatial_compiler/requirements.in
