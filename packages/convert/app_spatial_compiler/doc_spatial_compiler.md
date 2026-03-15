@@ -2,24 +2,25 @@
 
 ## Introduction: The Asymmetry of Computational Cost
 
-In the processing of digital documents, we frequently encounter the problem of state regression. Consider a natively digital PDF, such as a recent publication generated directly via `pdflatex`. The document is structurally perfect. The Unicode characters and their precise physical bounding boxes exist deterministically in the file's C-level memory.
+In the processing of digital documents, we frequently encounter the problem of state regression. Consider a natively digital PDF generated directly via `pdflatex`. The document is structurally perfect. The Unicode characters and their precise physical bounding boxes exist deterministically in the file's C-level memory.
 
-If we ignore the topological Quality Factor ($Q$) and route this document to a Vision-Language Model (VLM), we force a state regression. The PDF library renders the discrete vector document into a continuous pixel matrix $\mathbb{R}^{H \times W \times C}$. We intentionally destroy the perfect, discrete structural data to create a continuous image tensor. Subsequently, the VLM executes billions of floating-point operations (FLOPS) in GPU VRAM to "guess" the characters and spatial layouts that were already explicitly defined in the source memory. This operation incurs a massive computational debt.
+Transforming this document into a continuous pixel matrix $\mathbb{R}^{H \times W \times C}$ to be processed by a Vision-Language Model (VLM) is a state regression. We intentionally destroy discrete structural data to create a continuous image tensor, forcing the VLM to execute billions of floating-point operations (FLOPS) to approximate data that was already explicitly defined.
 
-The `app_spatial_compiler` module exists to exploit the asymmetry of computational cost when $Q \ge 0.95$. Instead of rendering a tensor, we execute Direct Memory Access (DMA) to extract a set of discrete nodes:
-
-$$N = \{ (c_i, x_{0i}, y_{0i}, x_{1i}, y_{1i}) \}$$
-
-Where $c_i \in \Sigma$ is the Unicode character, and the coordinates define its Euclidean bounding box. The module then utilizes deterministic geometric heuristics on the CPU to reconstruct paragraphs and equations. This requires $O(N \log N)$ standard CPU instructions, utilizing effectively zero VRAM and completing in fractions of a millisecond.
+The `app_spatial_compiler` module exploits the asymmetry of computational cost when the structural Quality Factor is high ($Q \ge 0.95$). Instead of rendering a tensor, we assume a preprocessing pipeline has executed Direct Memory Access (DMA) to extract a sequence of discrete nodes. We apply deterministic geometric heuristics on the CPU to reconstruct the 1D syntactic tree, requiring $O(N \log N)$ operations and minimal memory footprint.
 
 ## Chapter 1: The Domain Models and Memory Contiguity
 
-The categorical concept that Objects are Types (Entities) and Morphisms are Pure Functions governs our Hexagonal Architecture.
+In our category-theoretic architecture, Objects are Types (Entities) and Morphisms are Pure Functions.
 
-### 1.1 The `SpatialNode` (Input State)
+### 1.1 The `BoundingBox` (Input State)
+
+The fundamental Entity is the `BoundingBox`. We assume these entities are provided to the compiler as an initial axiom, having been extracted directly from the `pdflatex` binary streams. They represent text characters, mathematical symbols, and structural lines (e.g., table borders).
+
 ```python
+from dataclasses import dataclass
+
 @dataclass(frozen=True, slots=True)
-class SpatialNode:
+class BoundingBox:
     char: str
     x0: float
     y0: float
@@ -28,10 +29,13 @@ class SpatialNode:
 
 ```
 
-**Pedagogical Note on Memory Allocation:**
-By default, Python objects allocate a dynamic `__dict__` to store attributes, resulting in scattered heap memory pointers. In geometric algorithms requiring $O(N \log N)$ sweeps over thousands of nodes, cache misses become a severe performance bottleneck.
+**Field Definitions:**
 
-By passing `slots=True` to the dataclass, we suppress the dictionary creation. The Python interpreter allocates a strict, contiguous memory block for the string pointer and the four 64-bit floats. This ensures spatial locality in the CPU cache (L1/L2) during iterative Euclidean distance calculations. The `frozen=True` constraint guarantees mathematical immutability, preventing side effects during concurrent mapping operations.
+* `char`: A Unicode string of length 1 representing the exact character or symbol (e.g., `"A"`, `"\u222B"` for $\int$, or a special token for a graphical line).
+* $(x_0, y_0)$: The Euclidean coordinates of the top-left vertex.
+* $(x_1, y_1)$: The Euclidean coordinates of the bottom-right vertex.
+
+**Memory Allocation:** Suppressing the dynamic dictionary via `slots=True` ensures the Python interpreter allocates a strict, contiguous memory block. This guarantees spatial locality in the CPU cache during the $O(N \log N)$ Euclidean distance mappings. `frozen=True` ensures mathematical immutability.
 
 ### 1.2 The `MarkdownAST` (Output State)
 
@@ -43,81 +47,130 @@ class MarkdownAST:
 
 ```
 
-The discrete topological output of the compiler, containing the 1D string buffer and operational trace data.
+This represents the discrete topological output: a 1D string buffer formatted in Markdown/LaTeX and operational trace data.
 
 ## Chapter 2: Structural Subtyping and Dependency Inversion
 
-We define the primary transformation via a Python `Protocol`. This isolates the Domain logic from the specific Application Service orchestrating the data flow.
+We define the primary transformations via Python `Protocols` to isolate the Domain logic from Infrastructure side effects.
 
 ```python
+from collections.abc import Sequence
+from typing import Protocol
+
 class SpatialCompilerPort(Protocol):
-    def compile_graph(self, nodes: Sequence[SpatialNode]) -> MarkdownAST: ...
+    def compile_graph(self, nodes: Sequence[BoundingBox]) -> MarkdownAST: ...
+
+class VisionEncoderPort(Protocol):
+    def extract_image_context(self, bounds: tuple[float, float, float, float]) -> str: ...
 
 ```
 
-If deterministic geometric heuristics fail on a complex node cluster (e.g., a highly nested LaTeX commutative diagram), we must delegate that specific bounding box to a fallback adapter (such as a lightweight math-OCR model). We enforce Dependency Inversion here as well:
+When deterministic geometry cannot parse a non-textual graphical region (a figure), the `VisionEncoderPort` is invoked to map the coordinates to an external VLM evaluation.
 
-```python
-class EquationFallbackPort(Protocol):
-    def resolve_subgraph(self, bounds: tuple[float, float, float, float]) -> str: ...
-
-```
 
 ## Chapter 3: Algorithmic Implementation (Pure Morphisms)
 
-The core functionality is encapsulated within the `GeometricParser` domain service. It applies pure functional mappings over the `Sequence[SpatialNode]`.
+The algorithms are encapsulated within the `GeometricParser`. In our Dependency Inversion architecture, `GeometricParser` is the concrete Domain Service that implements the `SpatialCompilerPort` protocol defined in Chapter 2. It takes a `Sequence[BoundingBox]` and applies pure functional mappings to yield the `MarkdownAST`.
 
-### 3.1 Baseline Clustering ($O(N \log N)$ Projection)
+We operate under the assumption that the source is a standard `pdflatex` document. Consequently, the layout follows strict typographic rules that we can exploit mathematically.
 
-The algorithm projects the 2D spatial nodes onto the Y-axis. It groups characters $c_i$ into a single line $L_k$ if their vertical baselines $y_{0i}$ are within a strict tolerance $\epsilon_{font}$.
 
-$$L_k = \{ (c_i, \vec{r}_i) \in N \mid |y_{0i} - \mu_{y}(L_k)| < \epsilon_{font} \}$$
 
-**Implementation:** We execute Python's native Timsort: `nodes.sort(key=lambda n: (n.y0, n.x0))`. This guarantees $O(N \log N)$ worst-case time complexity. We then perform an $O(N)$ linear scan, accumulating nodes into a list representing $L_k$ until $y_{0i} - y_{0(i-1)} > \epsilon_{font}$, which triggers a line break.
 
-### 3.2 Block Formation (Paragraphs and Headers)
+### 3.1 Spatial Filtering: Global Invariant Projection Profiles
 
-Once lines $L_k$ are established, we compute the vertical displacement: $\Delta y = y_0(L_{k+1}) - y_1(L_k)$.
+**Context**
+In a standard `pdflatex` document, the spatial placement of headers and footers is globally invariant, governed by the document class geometry. The body text, conversely, is highly variable due to equations, figures, and paragraph breaks. To isolate the body, we must compute the global topological invariants $y_{top}$ and $y_{bottom}$ for the entire document, rather than relying on brittle, per-page heuristic gap thresholds.
 
-* If $\Delta y \approx \text{line\_height}$, we map the arrays into a continuous paragraph block.
-* If $\Delta y > \epsilon_{paragraph}$, we inject a double newline `\n\n` into the AST buffer.
-* If the bounding box height $(y_1 - y_0)$ of $L_k$ exceeds the document's statistical median by $> 1.5\sigma$, we prepend the Markdown header token (`#`).
+**Page Occupancy Function**
+Let $N_p$ be the set of all `BoundingBox` entities on a specific page $p$. We define the 1D Boolean occupancy function for page $p$ along the Y-axis as $I_p: \mathbb{R} \to \{0, 1\}$:
 
-### 3.3 Mathematical Formulation (LaTeX Reconstruction)
+$$I_p(y) = \begin{cases} 1 & \exists b \in N_p \text{ such that } b.y_0 \le y \le b.y_1 \\ 0 & \text{otherwise} \end{cases}$$
 
-When mathematical operator codes (e.g., $\int, \sum$) are detected, baseline clustering is suspended. We transition to 2D topological mapping:
+**Global Occupancy Profile**
+Let $P_{sample} \subset P$ be a uniformly random sample of pages from the document. We compute the global horizontal projection profile $O(y)$, which represents the union of all occupied vertical spaces across the sample:
 
-* **Superscripts:** If $x_{0j} > x_{1i}$ (node $j$ is right of node $i$) and $y_{1j} < \mu_{y}(L_i)$ (bottom of $j$ is above the baseline of $i$), we map to $c_i \text{\textasciicircum} \{c_j\}$.
-* **Fractions:** If an abnormally wide horizontal node (e.g., the minus/fraction line code point) is detected, we compute bounding box intersections to assign nodes to the numerator and denominator arrays, yielding `\frac{num}{den}`.
+$$O(y) = \bigvee_{p \in P_{sample}} I_p(y)$$
+
+**Invariant Margin Null-Spaces**
+In a structurally uniform document, the header and footer are separated from the body text by vertical bands of empty space that are absolutely invariant across all pages. Therefore, the function $O(y)$ will contain continuous intervals $[y_a, y_b]$ where $O(y) = 0$, completely isolating the header/footer regions from the dense core where $O(y) = 1$.
+
+**Algorithm (Deterministic Margin Extraction)**
+We replace subjective constants with a pure geometric intersection algorithm over $O(y)$:
+
+1. **Sampling and Projection:** Randomly sample $k$ pages (e.g., $k=10$). Compute the discrete array representing $O(y)$ by projecting all $y_0$ and $y_1$ coordinates.
+2. **Gap Extraction:** Identify all continuous intervals $G_i = [y_{start}, y_{end}]$ where $O(y) = 0$.
+3. **Median Font Height ($\tilde{h}$):** To filter out microscopic topological noise (e.g., fractional spaces between superscripts and standard text), compute the median bounding box height $\tilde{h}$ across the sample.
+4. **Margin Identification:**
+* Filter the set of gaps to retain only macroscopic gaps: $G_{macro} = \{ G_i \mid (y_{end} - y_{start}) > 2\tilde{h} \}$.
+* The top margin separator is the uppermost macroscopic gap. We set $y_{top}$ to the bottom edge of this gap: $y_{top} = \max(y) \text{ for } y \in G_{top}$.
+* The bottom margin separator is the lowermost macroscopic gap. We set $y_{bottom}$ to the top edge of this gap: $y_{bottom} = \min(y) \text{ for } y \in G_{bottom}$.
+
+
+
+**Connections and Reflections**
+By applying the Boolean projection $\bigvee I_p(y)$ globally, we project out the high-frequency spatial noise generated by localized subscripts, superscripts, and inline equations. A local equation only expands $I_p(y)$ for a single page $p$, which is absorbed seamlessly into the global profile without affecting the invariant margin null-spaces. Consequently, for any given page, the true body subset is strictly defined by the pure filtering morphism:
+
+$$N_{body} = \{ b \in N_p \mid y_{top} < b.y_0 \land b.y_1 < y_{bottom} \}$$
+
+This establishes an exact, deterministically proven bounding manifold for the downstream paragraph and equation clustering algorithms, devoid of subjective constants like $k \ge 3.0$.
+
+
+
+
+### 3.2 Baseline Clustering (Paragraphs)
+
+With $N_{body}$ isolated, we project the 2D spatial nodes onto the Y-axis. We group entities into a single line $l_k$ if their vertical baselines $y_0$ are within a strict font tolerance $\epsilon_{font}$.
+
+$$l_k = \{ b_i \in N_{body} \mid |b_i.y_0 - \mu_{y}(l_k)| < \epsilon_{font} \}$$
+
+We compute the vertical displacement between consecutive body lines: $\Delta y = y_0(l_{k+1}) - y_1(l_k)$.
+
+* If $\Delta y \approx \tilde{g}$ (the median gap), the lines form a continuous paragraph block.
+* If $\Delta y > 1.5 \cdot \tilde{g}$ (standard paragraph separation), we inject a double newline `\n\n` to break the Markdown paragraph.
+
+### 3.3 Mathematical Formulation (Equations)
+
+Equations present local topological anomalies compared to standard text. We classify them geometrically:
+
+1. **Display Mode Detection:** If a sequence of nodes $E \subset N_{body}$ possesses a large left margin displacement ($E.x_0 \gg \text{page\_margin}$) and contains high-density Unicode math operators ($\sum, \int$), we classify it as an equation and wrap the parsed string in `$$...$$`.
+2. **Equation Numbering:** `pdflatex` strictly right-aligns equation numbers. If we detect a bounding box sequence matching the regular expression `^\(\d+\)$` located at $x_1 \approx \text{page\_width}$, we map it to the LaTeX `\tag{n}` macro.
+3. **Fractions:** If an abnormally wide horizontal node (the fraction line code point) is detected, we compute geometric bounding box intersections. We partition local nodes into a numerator subset (nodes strictly above $y_0$ of the line) and a denominator subset (nodes strictly below $y_1$ of the line), yielding `\frac{num}{den}`.
+
+### 3.4 Table Grid Reconstruction
+
+Tables in `pdflatex` are defined by explicit horizontal and vertical graphical lines (vectors).
+
+1. **Grid Generation:** We filter $N_{body}$ for line entities. We compute the Cartesian product of horizontal and vertical line segments to identify exact Euclidean intersection points $I = \{ (x_m, y_n) \}$.
+2. **Cell Mapping:** These intersections define a discrete grid of rectangular cells $C_{m,n}$. For every text `BoundingBox` in the table's spatial domain, we calculate its geometric centroid.
+3. **Assignment:** The node is mapped to cell $C_{m,n}$ if its centroid falls strictly within the cell's boundaries. The filled grid is serialized into Markdown table syntax.
+
+### 3.5 Figures and Black Box Delegation
+
+Figures in `pdflatex` manifest as macroscopic regions devoid of text nodes, usually bounded by a text sequence starting with `"Figure X:"` or `"Fig. X:"`.
+
+1. **Empty Space Deduction:** We apply a maximal empty rectangle algorithm (a sweep-line approach over the bounding boxes) to identify the largest contiguous void $V(x_0, y_0, x_1, y_1)$ immediately adjacent to a detected caption.
+2. **Delegation:** We pass the exact Euclidean boundaries of $V$ to the `app_vision_encoder` interface. This encapsulates the external side-effect (the VLM execution) behind the `VisionEncoderPort`, ensuring the `GeometricParser` remains purely mathematical.
+
+
+
+
 
 ## Chapter 4: The Test-Driven Development (TDD) Axiom
 
-Testing geometric algorithms with physical PDF files is a severe antipattern. It couples the pure mathematical domain to filesystem I/O and external C++ PDF parsing libraries.
+Testing geometric algorithms with physical PDF files is a severe antipattern. It couples the pure mathematical domain to filesystem I/O.
 
 ### 4.1 Synthetic Geometric Manifolds
 
-In our `pytest` suite, we construct **synthetic arrays** of `SpatialNode` objects directly in standard RAM.
-
-To test the superscript algorithm, we explicitly instantiate:
+In our `pytest` suite, we construct synthetic arrays of `BoundingBox` objects directly in standard RAM. To test the fraction algorithm, we instantiate:
 
 ```python
 nodes = [
-    SpatialNode(char="x", x0=10.0, y0=20.0, x1=15.0, y1=25.0),
-    SpatialNode(char="2", x0=16.0, y0=15.0, x1=19.0, y1=19.0) # Elevated Y
+    BoundingBox(char="1", x0=12.0, y0=10.0, x1=14.0, y1=14.0), # Numerator
+    BoundingBox(char="-", x0=10.0, y0=15.0, x1=16.0, y1=16.0), # Fraction line
+    BoundingBox(char="2", x0=12.0, y0=17.0, x1=14.0, y1=21.0)  # Denominator
 ]
 
 ```
 
-We inject this sequence into the `GeometricParser` and mathematically assert that the output string matches `"x^{2}"`. This executes in microseconds and allows us to test infinite topological edge cases (e.g., collision, overlapping bounding boxes) deterministically.
-
-### 4.2 Integration Testing and Test Doubles
-
-To test the Sub-Routing Fallback, we implement a `FakeEquationFallbackAdapter` in `conftest.py`. When the `GeometricParser` calculates a variance threshold failure, it emits the bounding box coordinates to this Fake, which instantly returns a hardcoded LaTeX string (e.g., `\int E \cdot da`). This mathematically proves the conditional routing logic without invoking actual ML tensors.
-
-## Appendix A: Dependency Substrates and Python 3.12 Rigor
-
-This module enforces a strictly minimized dependency graph to maximize pure computational throughput.
-
-* **`itertools` and `math` (Standard Library):** The core algorithms utilize `itertools.groupby` for localized clustering and `math.isclose` for Euclidean tolerance checks. Avoiding external libraries like NumPy for these $O(N)$ 1D array sweeps avoids the C-extension context-switching overhead, which is computationally detrimental for small $N$ lists.
-* **`pytest`:** The exclusive testing framework, utilized for its rigorous fixture dependency injection architecture.
-* **`collections.abc`:** In accordance with Python 3.12 (PEP 585), we strictly use `collections.abc.Sequence` and `collections.abc.Callable` for type hinting input arrays and behaviors, reserving the `typing` module exclusively for `Protocol`.
+We inject this sequence into the `GeometricParser` and mathematically assert that the output string matches `\frac{1}{2}`.
