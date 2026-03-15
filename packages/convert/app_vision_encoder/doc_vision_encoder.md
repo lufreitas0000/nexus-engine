@@ -149,3 +149,62 @@ By injecting this Fake into our Application Service during testing, we mathemati
 The actual infrastructure adapters (`LocalQuantizedAdapter` and `ExternalAPIAdapter`) are excluded from the standard unit test suite. They are isolated using `pytest` markers (e.g., `@pytest.mark.gpu` or `@pytest.mark.network`). 
 
 These tests are executed selectively in controlled environments. For the local adapter, we assert that the CUDA context is successfully initialized and that the model's perplexity on a known ground-truth tensor falls within acceptable statistical bounds. For the external adapter, we mock the HTTP response using libraries like `responses` or `httpx-mock` to verify the deterministic parsing of the JSON payload without incurring API billing costs.
+
+## Chapter 8: Component Topology and Blackbox Signatures
+
+To formalize the boundaries of this bounded context, we summarize the internal components as mathematical black boxes, detailing their discrete inputs and outputs.
+
+### 8.1 Domain Entities (State Vectors)
+* **`PhysicalImageReference`**
+    * **Input:** System `Path` and integer byte size.
+    * **Output:** Immutable pointer object.
+    * **Constraint:** Raises `FileNotFoundError` if the manifold does not exist in the filesystem.
+* **`SemanticDescription`**
+    * **Input:** UTF-8 string $\Sigma^*$ and a metadata dictionary.
+    * **Output:** Immutable discrete representation of the image.
+
+### 8.2 Ports and Services (Pure Logic)
+* **`VisionEncoderPort` (Protocol)**
+    * **Signature:** $f(x: \text{PhysicalImageReference}) \to \text{SemanticDescription}$
+    * **Role:** Enforces structural subtyping for all hardware adapters.
+* **`generate_semantic_ast_node` (Application Service)**
+    * **Input:** Target image `Path` and an injected `VisionEncoderPort`.
+    * **Output:** `SemanticDescription`.
+    * **Role:** Orchestrates the pointer validation and delegates execution.
+
+### 8.3 Infrastructure Adapters (Effectful Compute)
+* **`LocalQuantizedAdapter`**
+    * **Input:** `PhysicalImageReference`
+    * **Output:** `SemanticDescription`
+    * **Side Effect:** Allocates ~4GB of GPU VRAM via PyTorch and `bitsandbytes`, executing autoregressive matrix multiplications.
+* **`ExternalAPIAdapter`**
+    * **Input:** `PhysicalImageReference`
+    * **Output:** `SemanticDescription`
+    * **Side Effect:** Maps continuous bytes to Base64, opens a blocking HTTP socket via `httpx`, and delegates compute.
+* **`FakeVisionEncoderAdapter` (Test Double)**
+    * **Input:** `PhysicalImageReference`
+    * **Output:** `SemanticDescription`
+    * **Side Effect:** None. Executes in $O(1)$ time for deterministic integration proofs.
+
+---
+
+## Appendix A: Standard Library and Dependency Substrates
+
+A rigorous system minimizes its dependency graph. Each external library must be justified by a strict mathematical or architectural necessity.
+
+### A.1 The Execution Boundary (`typer` and `rich`)
+* **`typer`:** Acts as the Primary/Driving Adapter. It parses the standard input string buffer (`sys.argv`) and routes it to Python functions using static type hints. This eliminates the boilerplate of `argparse` while maintaining strict type safety at the entry boundary.
+* **`rich.console` / `rich.panel`:** Terminal output is structurally a continuous stream of characters. `rich` injects VT100 ANSI escape sequences into the `stdout` buffer, allowing discrete visual formatting (colors, bounding boxes) without altering the logical sequence of the data.
+
+### A.2 The Network Boundary (`httpx` and `base64`)
+* **`base64` (Standard Library):** A bijective mapping function. JSON payloads over HTTP strictly require ASCII-compatible string encodings. `base64` maps our continuous binary vector (the raw image bytes) into the discrete ASCII set $\Sigma_{64}^*$ via a mathematically reversible sequence.
+* **`httpx`:** Replaces the legacy `requests` library. It provides strict timeout enforcing and modern HTTP/2 connection pooling. While we currently use its synchronous (blocking) API, `httpx` allows a trivial migration to `asyncio` non-blocking sockets when we parallelize the AST extraction.
+
+### A.3 Type Hinting Rigor: `typing` vs `collections.abc` in Python 3.12
+In Python 3.12, the type system adheres to PEP 585 (Type Hinting Generics In Standard Collections). 
+
+Previously, engineers imported `List`, `Dict`, and `Set` from the `typing` module to construct generic types. In Python 3.12, this is obsolete. The standard C-level object primitives themselves now support generic indexing (e.g., `dict[str, str]`). 
+
+Furthermore, abstract base classes representing behaviors should be sourced from `collections.abc` (e.g., `collections.abc.Sequence`, `collections.abc.Mapping`, `collections.abc.Callable`) rather than `typing`.
+
+We restrict our use of the `typing` module strictly to features that have no runtime implementation counterpart, specifically `typing.Protocol` (for structural subtyping) and `typing.Optional` (as a shorthand for `X | None`). This minimizes the interpreter's module resolution overhead and enforces modern Python semantic rigor.
