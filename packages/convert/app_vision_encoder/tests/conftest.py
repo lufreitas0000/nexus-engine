@@ -9,8 +9,6 @@ from PIL import Image
 from src.domain.models import PhysicalImageReference, SemanticDescription
 from src.domain.ports import VisionEncoderPort
 
-FIXTURE_DIR = Path(__file__).parent / "fixtures"
-
 class FakeVisionEncoderAdapter:
     """
     Deterministic Test Double for the VisionEncoderPort.
@@ -27,18 +25,17 @@ def fake_encoder() -> VisionEncoderPort:
     return FakeVisionEncoderAdapter()
 
 @pytest.fixture(scope="session")
-def synthetic_image_tensor() -> Path:
+def synthetic_image_tensor(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """
-    Synthesizes a minimal H x W x C matrix in RAM and flushes it to disk
-    to simulate the upstream crop artifact from the layout detector.
+    Synthesizes a minimal H x W x C matrix in RAM and flushes it to a transient OS directory.
+    Guarantees zero static binary leakage into the local file system.
     """
-    FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = FIXTURE_DIR / "synthetic_graph.png"
+    fixture_dir = tmp_path_factory.mktemp("fixtures")
+    out_path = fixture_dir / "synthetic_graph.png"
     
-    if not out_path.exists():
-        # Generate a minimal 100x100 RGB tensor
-        img = Image.new('RGB', (100, 100), color=(73, 109, 137))
-        img.save(out_path)
+    # Generate a minimal 100x100 RGB tensor
+    img = Image.new('RGB', (100, 100), color=(73, 109, 137))
+    img.save(out_path)
         
     return out_path
 
