@@ -1,7 +1,11 @@
 from collections.abc import Sequence
+from typing import Callable
 from app_spatial_compiler.src.domain.models import SpatialNode
 
 def _find_maximal_cut(nodes: Sequence[SpatialNode], axis: str) -> tuple[int | None, float, list[SpatialNode]]:
+    get_min: Callable[[SpatialNode], float]
+    get_max: Callable[[SpatialNode], float]
+
     if axis == 'x':
         sorted_nodes = sorted(nodes, key=lambda n: n.x0)
         get_min = lambda n: n.x0
