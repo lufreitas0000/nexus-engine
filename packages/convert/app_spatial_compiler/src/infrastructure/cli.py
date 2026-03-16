@@ -1,8 +1,10 @@
 import json
 import sys
-import typer
-from typing import Annotated
+from typing import Annotated, Optional
 from collections.abc import Sequence
+
+import typer
+from rich.console import Console
 
 from app_spatial_compiler.src.domain.models import SpatialNode, MarkdownAST
 from app_spatial_compiler.src.domain.services.topology import GeometricParser
@@ -10,6 +12,7 @@ from app_spatial_compiler.src.domain.services.math_topology import MathTopologyR
 from app_spatial_compiler.src.application.use_cases.compile_document import CompileDocumentUseCase
 
 app = typer.Typer(help="Spatial Compiler: Maps continuous 2D Euclidean manifolds to 1D ASTs.")
+error_console = Console(stderr=True)
 
 class CompositeSpatialCompiler:
     """
@@ -22,25 +25,35 @@ class CompositeSpatialCompiler:
         self.math_resolver = MathTopologyResolver()
 
     def compile_graph(self, nodes: Sequence[SpatialNode]) -> MarkdownAST:
-        # A rigorous implementation would apply the math resolver per isolated baseline block.
-        # For current TDD saturation, we route the raw manifold through the math resolver
-        # to guarantee superscript/fraction topological reduction.
         content = self.math_resolver.resolve_manifold(nodes)
         if not content:
-            # Fallback to standard macroscopic clustering if no math topologies are reduced
             return self.geometric_parser.compile_graph(nodes)
             
         return MarkdownAST(content=content, metadata={"resolution": "math_topology"})
 
 @app.command()
 def compile(
-    payload: Annotated[str, typer.Argument(help="JSON serialized 2D manifold array")]
+    payload: Annotated[Optional[str], typer.Argument(help="JSON serialized manifold string")] = None,
+    file: Annotated[Optional[typer.FileText], typer.Option("--file", "-f", help="Path to JSON manifold file")] = None
 ) -> None:
     """
-    Executes the spatial compilation pipeline.
+    Executes the spatial compilation pipeline. Reads from Argument, --file, or STDIN.
     """
+    input_data: str = ""
+
+    # 1. Resolve Input manifold from Argument, File, or STDIN pipe
+    if payload:
+        input_data = payload
+    elif file:
+        input_data = file.read()
+    elif not sys.stdin.isatty():
+        input_data = sys.stdin.read()
+    else:
+        error_console.print("[bold red]Error:[/bold red] No input manifold provided. Provide a string argument, use --file, or pipe JSON to STDIN.")
+        raise typer.Exit(code=1)
+
     try:
-        raw_nodes = json.loads(payload)
+        raw_nodes = json.loads(input_data)
         manifold = [
             SpatialNode(
                 char=str(n["char"]),
@@ -51,18 +64,19 @@ def compile(
             )
             for n in raw_nodes
         ]
-    except (json.JSONDecodeError, KeyError) as e:
-        typer.echo(f"Manifold Deserialization Fault: {e}", err=True)
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        error_console.print(f"[bold red]Manifold Deserialization Fault:[/bold red] {e}")
         raise typer.Exit(code=1)
 
-    # Dependency Injection Wiring
+    # 2. Dependency Injection and Execution
     port = CompositeSpatialCompiler()
     use_case = CompileDocumentUseCase(spatial_compiler=port)
-
-    # Pure Morphism Execution
     ast = use_case.execute(manifold)
 
-    # Flush exact discrete state to standard output
+    # 3. Telemetry Segregation (stderr)
+    error_console.print(f"[bold cyan]Topological Metadata:[/bold cyan] {ast.metadata}")
+
+    # 4. Clean Output (stdout)
     sys.stdout.write(ast.content + "\n")
     sys.stdout.flush()
 
