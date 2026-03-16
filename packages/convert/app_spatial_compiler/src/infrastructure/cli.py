@@ -13,6 +13,7 @@ from app_spatial_compiler.src.domain.services.math_topology import MathTopologyR
 from app_spatial_compiler.src.domain.geometry.tessellation import detect_graphical_voids, get_spatial_blocks
 from app_spatial_compiler.src.application.use_cases.compile_document import CompileDocumentUseCase
 from app_spatial_compiler.src.infrastructure.adapters.vision_encoder import VisionEncoderAdapter
+from app_spatial_compiler.src.infrastructure.adapters.pdf_extractor import PDFExtractorAdapter
 
 app = typer.Typer(help="Spatial Compiler: Maps 2D manifolds to 1D ASTs.")
 error_console = Console(stderr=True)
@@ -25,23 +26,23 @@ class CompositeSpatialCompiler:
         self.ignore_margins = ignore_margins
 
     def is_math_block(self, content: str) -> bool:
-        # Avoid greedy math wrapping for standard accents (\^, \', \", \~)
+        # Avoid greedy math wrapping for standard LaTeX accents
         accents = r"\\[\^'\"~=.]"
-        math_signals = r"[\^_{}]|\\(frac|int|mu|nu|alpha|beta|Sigma|partial)"
-        
-        # Strip accents before checking for math backslashes
+        math_signals = r"[\^_{}]|\\(frac|int|mu|nu|alpha|beta|Sigma|partial|mathbb|text)"
         cleaned = re.sub(accents, "", content)
         return bool(re.search(math_signals, cleaned)) or "=" in content
 
     def compile_graph(self, nodes: Sequence[SpatialNode]) -> MarkdownAST:
-        # Filter Ignorable Content (Headers/Footers based on standard margins)
-        # Assuming 842pt height; ignore top 50pt and bottom 50pt
+        # Margin Filter: Ignore content outside the 50pt-792pt vertical band (A4)
         if self.ignore_margins:
             nodes = [n for n in nodes if 50 < (n.y0 % 842) < 792]
 
-        voids = detect_graphical_voids(nodes, (0.0, 0.0, 595.0, 842.0))
-        resolved_figures = [self.vision_adapter.resolve_subgraph(v) for v in voids]
-        
+        if not nodes:
+            # If no nodes survive filtering, check for graphical voids
+            voids = detect_graphical_voids([], (0.0, 0.0, 595.0, 842.0))
+            resolved = [self.vision_adapter.resolve_subgraph(v) for v in voids]
+            return MarkdownAST(content="\n\n".join(resolved), metadata={"status": "void"})
+
         blocks = get_spatial_blocks(nodes)
         results = []
         for block in blocks:
@@ -52,17 +53,26 @@ class CompositeSpatialCompiler:
                 ast = self.geometric_parser.compile_graph(block)
                 results.append(ast.content)
             
-        full_content = "\n\n".join(resolved_figures + results)
-        return MarkdownAST(content=full_content, metadata={"blocks": str(len(blocks))})
+        return MarkdownAST(content="\n\n".join(results), metadata={"blocks": str(len(blocks))})
 
 @app.command()
-def compile(payload: Annotated[Optional[str], typer.Argument()] = None) -> None:
-    if not payload: raise typer.Exit(1)
-    try:
+def compile(
+    payload: Annotated[Optional[str], typer.Argument(help="JSON manifold")] = None,
+    pdf: Annotated[Optional[str], typer.Option("--pdf", help="Path to PDF file")] = None
+) -> None:
+    manifold = []
+    if pdf:
+        extractor = PDFExtractorAdapter()
+        manifold = extractor.extract_nodes(pdf)
+    elif payload:
         manifold = [SpatialNode(**n) for n in json.loads(payload)]
-    except Exception as e:
-        error_console.print(f"Fault: {e}"); raise typer.Exit(1)
+    else:
+        raise typer.Exit(code=1)
 
-    use_case = CompileDocumentUseCase(spatial_compiler=CompositeSpatialCompiler())
+    port = CompositeSpatialCompiler()
+    use_case = CompileDocumentUseCase(spatial_compiler=port)
     ast = use_case.execute(manifold)
     sys.stdout.write(ast.content + "\n")
+
+if __name__ == "__main__":
+    app()

@@ -34,7 +34,9 @@ cffi==2.0.0
 cfgv==3.5.0
     # via pre-commit
 charset-normalizer==3.4.6
-    # via requests
+    # via
+    #   pdfminer-six
+    #   requests
 click==8.3.1
     # via
     #   marker-pdf
@@ -43,7 +45,9 @@ click==8.3.1
     #   surya-ocr
     #   typer
 cryptography==46.0.5
-    # via google-auth
+    # via
+    #   google-auth
+    #   pdfminer-six
 cuda-bindings==12.9.4
     # via torch
 cuda-pathfinder==1.4.2
@@ -201,6 +205,8 @@ packaging==26.0
     #   wheel
 pathspec==1.0.4
     # via mypy
+pdfminer-six==20260107
+    # via -r app_spatial_compiler/requirements.in
 pdftext==0.6.3
     # via marker-pdf
 pillow==10.4.0

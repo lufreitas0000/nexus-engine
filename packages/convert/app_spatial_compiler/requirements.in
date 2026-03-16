@@ -7,3 +7,4 @@ pytest
 mypy
 pip-tools
 pylatexenc
+pdfminer.six

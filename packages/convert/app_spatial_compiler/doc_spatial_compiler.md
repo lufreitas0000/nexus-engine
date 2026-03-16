@@ -156,3 +156,14 @@ To achieve full production reliability for generalized academic parsing, the fol
 * **Matrix Reconstruction**: Implement a 2D grid mapping algorithm to resolve multi-line environments such as `\begin{pmatrix} ... \end{pmatrix}`.
 * **Nested Fraction Stress-Testing**: Refine the recursive fraction resolver to handle deeply nested structures with significantly varying font scales.
 * **Operational Refactor**: Decouple the dispatching logic from the `infrastructure` layer into a dedicated `Application Service` to ensure the CLI remains a thin driving adapter.
+
+## Chapter 7: The DMA Extraction Layer (PDF-to-Manifold)
+
+To bridge the gap between static PDF files and the geometric domain, we implement a Direct Memory Access (DMA) adapter. 
+
+### 7.1 Coordinate System Normalization
+
+The `PDFExtractorAdapter` preserves the 2D Euclidean state of the `LTChar` objects. 
+1. **Euclidean Bounds**: Precise $L_x$ and $L_y$ extents are mapped to `SpatialNode`.
+2. **Margin Filtering**: Content residing in the top/bottom 50pt margins (headers/footers) is filtered out in the infrastructure layer to ensure the domain receives only the semantic manifold.
+3. **Typographic Scale**: Point-size metadata from `pdfminer` is preserved in the `font_size` attribute to drive relative bisection thresholds.
