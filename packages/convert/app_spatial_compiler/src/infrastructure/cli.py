@@ -28,11 +28,11 @@ class CompositeSpatialCompiler:
         self.ignore_margins = ignore_margins
 
     def compile_graph(self, nodes: Sequence[SpatialNode]) -> MarkdownAST:
-        # 1. Establish Page Typographic Context
         if not nodes: return MarkdownAST(content="", metadata={})
+
+        # Determine page context for header classification
         page_median_h = statistics.median(n.font_size if n.font_size else n.height for n in nodes)
 
-        # 2. Margin Filter: Ignore content outside the 50pt-792pt vertical band (A4)
         if self.ignore_margins:
             nodes = [n for n in nodes if 50 < (n.y0 % 842) < 792]
 
@@ -41,7 +41,6 @@ class CompositeSpatialCompiler:
             resolved = [self.vision_adapter.resolve_subgraph(v) for v in voids]
             return MarkdownAST(content="\n\n".join(resolved), metadata={"status": "void"})
 
-        # 3. Partition and Classify
         blocks = get_spatial_blocks(nodes, min_dx=10.0, min_dy=5.0)
         classifier = BlockClassifier()
         results = []
@@ -66,6 +65,7 @@ def compile(
     payload: Annotated[Optional[str], typer.Argument(help="JSON manifold")] = None,
     pdf: Annotated[Optional[str], typer.Option("--pdf", help="Path to PDF file")] = None
 ) -> None:
+    # Explicit type annotation for strict mypy check
     manifold: list[SpatialNode] = []
     if pdf:
         extractor = PDFExtractorAdapter()

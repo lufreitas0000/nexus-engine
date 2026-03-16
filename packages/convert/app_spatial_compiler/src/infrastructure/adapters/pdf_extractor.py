@@ -5,12 +5,11 @@ from app_spatial_compiler.src.domain.models import SpatialNode
 
 class PDFExtractorAdapter:
     """
-    Infrastructure adapter implementing Direct Memory Access (DMA) 
+    Infrastructure adapter implementing Direct Memory Access (DMA)
     over PDF layout streams to extract character-level spatial manifolds.
     """
     def extract_nodes(self, pdf_path: str) -> list[SpatialNode]:
         nodes: list[SpatialNode] = []
-        # PDFMiner uses a bottom-left origin (0,0) consistent with our Domain
         for page_layout in extract_pages(pdf_path):
             nodes.extend(self._process_layout_element(page_layout))
         return nodes
