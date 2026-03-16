@@ -43,7 +43,7 @@ class CompositeSpatialCompiler:
             resolved = [self.vision_adapter.resolve_subgraph(v) for v in voids]
             return MarkdownAST(content="\n\n".join(resolved), metadata={"status": "void"})
 
-        blocks = get_spatial_blocks(nodes)
+        blocks = get_spatial_blocks(nodes, min_dx=10.0, min_dy=5.0)
         results = []
         for block in blocks:
             math_candidate = self.math_resolver.resolve_manifold(block)
@@ -52,7 +52,7 @@ class CompositeSpatialCompiler:
             else:
                 ast = self.geometric_parser.compile_graph(block)
                 results.append(ast.content)
-            
+
         return MarkdownAST(content="\n\n".join(results), metadata={"blocks": str(len(blocks))})
 
 @app.command()

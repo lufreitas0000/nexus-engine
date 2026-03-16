@@ -1,3 +1,4 @@
+# app_spatial_compiler/src/domain/models.py
 from dataclasses import dataclass
 from typing import Optional
 
