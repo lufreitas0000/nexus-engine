@@ -27,19 +27,21 @@ class CompositeSpatialCompiler:
         self.vision_adapter = VisionEncoderAdapter()
         self.ignore_margins = ignore_margins
 
-    def is_math_block(self, content: str) -> bool:
-        # Avoid greedy math wrapping for standard LaTeX accents
-        accents = r"\\[\^'\"~=.]"
-        math_signals = r"[\^_{}]|\\(frac|int|mu|nu|alpha|beta|Sigma|partial|mathbb|text)"
-        cleaned = re.sub(accents, "", content)
-        return bool(re.search(math_signals, cleaned)) or "=" in content
-
     def compile_graph(self, nodes: Sequence[SpatialNode]) -> MarkdownAST:
         # 1. Establish Page Typographic Context
         if not nodes: return MarkdownAST(content="", metadata={})
         page_median_h = statistics.median(n.font_size if n.font_size else n.height for n in nodes)
 
-        # 2. Partition and Classify
+        # 2. Margin Filter: Ignore content outside the 50pt-792pt vertical band (A4)
+        if self.ignore_margins:
+            nodes = [n for n in nodes if 50 < (n.y0 % 842) < 792]
+
+        if not nodes:
+            voids = detect_graphical_voids([], (0.0, 0.0, 595.0, 842.0))
+            resolved = [self.vision_adapter.resolve_subgraph(v) for v in voids]
+            return MarkdownAST(content="\n\n".join(resolved), metadata={"status": "void"})
+
+        # 3. Partition and Classify
         blocks = get_spatial_blocks(nodes, min_dx=10.0, min_dy=5.0)
         classifier = BlockClassifier()
         results = []
@@ -53,9 +55,6 @@ class CompositeSpatialCompiler:
             elif b_type == BlockType.HEADER:
                 text_ast = self.geometric_parser.compile_graph(block)
                 results.append(f"# {text_ast.content}")
-            elif b_type == BlockType.ITEMIZE:
-                text_ast = self.geometric_parser.compile_graph(block)
-                results.append(text_ast.content)
             else:
                 text_ast = self.geometric_parser.compile_graph(block)
                 results.append(text_ast.content)
