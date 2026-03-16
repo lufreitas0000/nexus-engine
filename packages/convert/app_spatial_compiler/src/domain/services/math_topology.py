@@ -1,51 +1,54 @@
+import statistics
 from collections.abc import Sequence
+from pylatexenc.latexencode import unicode_to_latex
 from app_spatial_compiler.src.domain.models import SpatialNode
 from app_spatial_compiler.src.domain.geometry.spatial_tree import SpatialKDTree
 
-SYMBOL_MAP = {
-    "μ": "\\mu", "ν": "\\nu", "α": "\\alpha", "β": "\\beta", "γ": "\\gamma",
-    "δ": "\\delta", "ε": "\\epsilon", "π": "\\pi", "Σ": "\\Sigma", "Δ": "\\Delta"
-}
-
 class MathTopologyResolver:
     """
-    Resolves 2D manifolds into 1D LaTeX syntax with symbol mapping 
-    and proximity-aware topological attachments.
+    Resolves 2D manifolds into LaTeX by applying graph grammars 
+    scaled by local point-size ratios.
     """
+    def _get_ref_height(self, nodes: Sequence[SpatialNode]) -> float:
+        """Estimates the baseline point size from the local distribution."""
+        if not nodes: return 10.0
+        vals = [n.font_size if n.font_size else n.height for n in nodes]
+        return float(statistics.median(vals))
+
     def _to_latex(self, char: str) -> str:
-        return SYMBOL_MAP.get(char, char)
+        # pylatexenc handles accents and math symbols automatically
+        return unicode_to_latex(char)
 
     def resolve_manifold(self, nodes: Sequence[SpatialNode]) -> str:
-        if not nodes:
-            return ""
-
-        # 1. Fraction Resolution
-        fraction_lines = [n for n in nodes if n.char == "-" and (n.x1 - n.x0) > (n.y1 - n.y0) * 1.5]
+        if not nodes: return ""
+        
+        ref_h = self._get_ref_height(nodes)
+        
+        # 1. Fraction Resolution (Thresholds based on point size)
+        fraction_lines = [n for n in nodes if n.char == "-" and n.width > ref_h * 0.4]
         if fraction_lines:
-            frac_line = fraction_lines[0]
-            numerator = [n for n in nodes if n.y1 <= frac_line.y0 and n is not frac_line]
-            denominator = [n for n in nodes if n.y0 >= frac_line.y1 and n is not frac_line]
-            if numerator and denominator:
-                return f"\\frac{{{self.resolve_manifold(numerator)}}}{{{self.resolve_manifold(denominator)}}}"
+            frac = fraction_lines[0]
+            num = [n for n in nodes if n.y1 <= frac.y0 and n is not frac]
+            den = [n for n in nodes if n.y0 >= frac.y1 and n is not frac]
+            if num and den:
+                return f"\\frac{{{self.resolve_manifold(num)}}}{{{self.resolve_manifold(den)}}}"
 
-        # 2. Baseline and Multi-Index Resolution
+        # 2. Sequential Graph Grammar
         tree = SpatialKDTree(list(nodes))
         sorted_nodes = sorted(nodes, key=lambda n: n.x0)
         buffer = ""
         processed: set[int] = set()
 
         for node in sorted_nodes:
-            if id(node) in processed:
-                continue
+            if id(node) in processed: continue
             
-            h_base = node.y1 - node.y0
-            w_base = node.x1 - node.x0
+            # Adjacency query for topological attachments
             neighbors = tree.query_knn(node, k=5)
-
-            # Prescript Detection (Left-side)
-            left_super = [nn for nn in neighbors if id(nn) not in processed and nn.x1 <= node.x0 and (node.x0 - nn.x1) < w_base and nn.y1 <= node.y0 + (h_base * 0.3)]
-            left_sub = [nn for nn in neighbors if id(nn) not in processed and nn.x1 <= node.x0 and (node.x0 - nn.x1) < w_base and nn.y0 >= node.y1 - (h_base * 0.3)]
             
+            # Prescript Detection (Relative to font size)
+            left_super = [n for n in neighbors if id(n) not in processed and n.x1 <= node.x0 and (node.x0 - n.x1) < ref_h * 0.4 and n.y1 < node.y0 + (ref_h * 0.3)]
+            left_sub = [n for n in neighbors if id(n) not in processed and n.x1 <= node.x0 and (node.x0 - n.x1) < ref_h * 0.4 and n.y0 > node.y1 - (ref_h * 0.3)]
+
             if left_super:
                 buffer += f"^{{{''.join(self._to_latex(n.char) for n in sorted(left_super, key=lambda n: n.x0))}}}"
                 for n in left_super: processed.add(id(n))
@@ -56,20 +59,16 @@ class MathTopologyResolver:
             buffer += self._to_latex(node.char)
             processed.add(id(node))
 
-            # Right-side Multi-Index Detection
+            # Post-index (Sub/Super) Detection
             right_super = []
             right_sub = []
-            
-            for nn in neighbors:
-                if id(nn) in processed: continue
-                # Proximity Invariant: Attachments must be locally contiguous
-                # We limit the horizontal search to 50% of the base width or a small constant
-                if (nn.x0 - node.x1) > max(w_base * 0.5, 5.0): continue
+            for n in neighbors:
+                if id(n) in processed: continue
+                # Contiguity invariant: x-dist < half reference height
+                if (n.x0 - node.x1) > ref_h * 0.5: continue
                 
-                if nn.y1 <= node.y0 + (h_base * 0.4):
-                    right_super.append(nn)
-                elif nn.y0 >= node.y1 - (h_base * 0.4):
-                    right_sub.append(nn)
+                if n.y1 < node.y0 + (ref_h * 0.4): right_super.append(n)
+                elif n.y0 > node.y1 - (ref_h * 0.4): right_sub.append(n)
 
             if right_super:
                 buffer += f"^{{{''.join(self._to_latex(n.char) for n in sorted(right_super, key=lambda n: n.x0))}}}"
