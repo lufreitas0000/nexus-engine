@@ -30,33 +30,28 @@ class CompositeSpatialCompiler:
         results = []
         
         for block in blocks:
-            math_content = self.math_resolver.resolve_manifold(block)
-            # Heuristic: Dispatch to math if operators are present or LaTeX reduction occurred
-            has_math_ops = any(c in "=-+*/\\^_{}" for n in block for c in n.char)
-            has_latex = "^" in math_content or "\\" in math_content or "{" in math_content
+            math_candidate = self.math_resolver.resolve_manifold(block)
+            # Heuristic: Determine if the block requires LaTeX formatting
+            has_operators = any(c in "=-+*/\\^_{}" for n in block for c in n.char)
+            is_math = has_operators or "^" in math_candidate or "_" in math_candidate or "\\" in math_candidate
             
-            if has_math_ops or has_latex:
-                results.append(math_content)
+            if is_math:
+                # Wrap in Markdown display math delimiters
+                results.append(f"$${math_candidate}$$")
             else:
                 ast = self.geometric_parser.compile_graph(block)
                 results.append(ast.content)
             
         full_content = "\n\n".join(resolved_figures + results)
-        return MarkdownAST(content=full_content, metadata={"blocks": str(len(blocks))})
+        return MarkdownAST(content=full_content, metadata={"blocks_processed": str(len(blocks))})
 
 @app.command()
 def compile(
-    payload: Annotated[Optional[str], typer.Argument(help="JSON manifold string")] = None,
-    file: Annotated[Optional[typer.FileText], typer.Option("--file", "-f")] = None
+    payload: Annotated[Optional[str], typer.Argument(help="JSON manifold array")] = None
 ) -> None:
-    input_data = ""
-    if payload: input_data = payload
-    elif file: input_data = file.read()
-    elif not sys.stdin.isatty(): input_data = sys.stdin.read()
-    else: raise typer.Exit(code=1)
-
+    if not payload: raise typer.Exit(code=1)
     try:
-        raw = json.loads(input_data)
+        raw = json.loads(payload)
         manifold = [SpatialNode(char=n["char"], x0=n["x0"], y0=n["y0"], x1=n["x1"], y1=n["y1"]) for n in raw]
     except Exception as e:
         error_console.print(f"Fault: {e}")
