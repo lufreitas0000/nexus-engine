@@ -12,3 +12,12 @@ explicit_package_bases = true
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "pylatexenc.*",
+    "pdfminer.*",
+    "typer.*",
+    "rich.*"
+]
+ignore_missing_imports = true
