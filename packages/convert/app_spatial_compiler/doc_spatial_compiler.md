@@ -221,3 +221,33 @@ While libraries like Microsoft's `MarkitDown` or VLM-based OCR tools exist, they
 
 To achieve a production-ready state, we will implement a **Structural Dispatcher** in the Application layer. This dispatcher will iterate over the blocks identified by the `Recursive XY-Cut`, query the `BlockClassifier`, and delegate the nodes to specialized `MarkdownSynthesizers`.
 
+
+## Chapter 9: Phase 2 - Semantic Synthesis and Topological Hardening
+
+### 9.1 Adaptive Manifold Scaling (Non-A4 Support)
+To eliminate hardcoded A4 invariants, we move to a relative coordinate system. Let $\mathcal{P}$ be the set of all nodes in a page. We define the dynamic horizontal threshold $\Delta_x$ as:
+$$\Delta_x = \text{median}(\{w_i \mid n_i \in \mathcal{P}\}) \times \phi$$
+where $w_i$ is the glyph width and $\phi$ is a scaling factor (typically $0.5$ for character spacing). This ensures the `Recursive XY-Cut` remains invariant under global scaling of the document manifold.
+
+### 9.2 Structural Dispatching & MarkdownSynthesizer
+We introduce a decoupling between the **Topological Sort** and the **String Representation**.
+* **StructuralDispatcher**: An Application Service that consumes the `SpatialTree` and iterates through identified clusters.
+* **MarkdownSynthesizer**: A Domain Service implementing a Strategy pattern. It receives a cluster of `SpatialNode` objects and applies structural morphisms (e.g., converting a list cluster into `* item` strings).
+
+### 9.3 Metadata Extraction: The Font Descriptor
+To detect headers and emphasis, the `PDFExtractorAdapter` must capture the font-weight $\omega$. We define a weight-mapping function:
+$$f(\text{font\_name}) \to \{\text{Normal, Bold, Italic, Math}\}$$
+Headers are identified by the ratio $R = \frac{s_{block}}{s_{median}}$, where $s$ is font size. 
+* $R > 1.4 \implies \#$ (H1)
+* $1.2 < R \le 1.4 \implies \#\#$ (H2)
+
+### 9.4 Mathematical Topologies: Matrix Reconstruction
+For 2D math structures, we implement a **Grid-Mapping Algorithm**. Given a math-block $B$, we define rows $R$ and columns $C$ by projecting glyph centroids onto the axes. A node $n_i$ at $(x_i, y_i)$ belongs to cell $(r, c)$ if:
+$$y_i \in [y_r - \epsilon, y_r + \epsilon] \land x_i \in [x_c - \epsilon, x_c + \epsilon]$$
+The synthesizer then emits the LaTeX `\begin{pmatrix}` environment by iterating through the resolved $r \times c$ grid.
+
+### 9.5 Phase 2 Roadmap
+1.  **Atomic Change 1**: Update `SpatialNode` and `PDFExtractorAdapter` to capture and store font metadata ($\omega$).
+2.  **Atomic Change 2**: Refactor `GeometricParser` to extract the `StructuralDispatcher` orchestration logic.
+3.  **Atomic Change 3**: Implement the `BlockClassifier` for Header/List/Text discrimination.
+4.  **Atomic Change 4**: Implement the Grid-Mapping algorithm for Matrix reconstruction.
