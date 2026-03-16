@@ -1,6 +1,5 @@
 import json
 import sys
-import re
 import statistics
 from typing import Annotated, Optional
 from collections.abc import Sequence
@@ -29,31 +28,25 @@ class CompositeSpatialCompiler:
 
     def compile_graph(self, nodes: Sequence[SpatialNode]) -> MarkdownAST:
         if not nodes: return MarkdownAST(content="", metadata={})
-
-        # Determine page context for header classification
         page_median_h = statistics.median(n.font_size if n.font_size else n.height for n in nodes)
 
         if self.ignore_margins:
             nodes = [n for n in nodes if 50 < (n.y0 % 842) < 792]
-
-        if not nodes:
-            voids = detect_graphical_voids([], (0.0, 0.0, 595.0, 842.0))
-            resolved = [self.vision_adapter.resolve_subgraph(v) for v in voids]
-            return MarkdownAST(content="\n\n".join(resolved), metadata={"status": "void"})
 
         blocks = get_spatial_blocks(nodes, min_dx=10.0, min_dy=5.0)
         classifier = BlockClassifier()
         results = []
 
         for block in blocks:
-            b_type = classifier.classify(block, page_median_h)
+            b_type, level = classifier.classify(block, page_median_h)
 
             if b_type == BlockType.MATH:
                 math_str = self.math_resolver.resolve_manifold(block)
                 results.append(f"$${math_str}$$")
             elif b_type == BlockType.HEADER:
                 text_ast = self.geometric_parser.compile_graph(block)
-                results.append(f"# {text_ast.content}")
+                prefix = "#" * level
+                results.append(f"{prefix} {text_ast.content}")
             else:
                 text_ast = self.geometric_parser.compile_graph(block)
                 results.append(text_ast.content)
@@ -65,7 +58,6 @@ def compile(
     payload: Annotated[Optional[str], typer.Argument(help="JSON manifold")] = None,
     pdf: Annotated[Optional[str], typer.Option("--pdf", help="Path to PDF file")] = None
 ) -> None:
-    # Explicit type annotation for strict mypy check
     manifold: list[SpatialNode] = []
     if pdf:
         extractor = PDFExtractorAdapter()
