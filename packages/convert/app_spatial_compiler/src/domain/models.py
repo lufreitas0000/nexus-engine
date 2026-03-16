@@ -1,13 +1,21 @@
-# app_spatial_compiler/src/domain/models.py
 from dataclasses import dataclass
 from typing import Optional
+from enum import Enum, auto
+
+class BlockType(Enum):
+    """
+    Categorization of Euclidean manifolds based on typographic intent.
+    Used to select the appropriate 1D synthesis morphism.
+    """
+    TEXT = auto()      # Standard body paragraphs
+    MATH = auto()      # Display or inline LaTeX manifolds
+    HEADER = auto()    # Structural headings (# , ##)
+    ITEMIZE = auto()   # Bulleted or numbered lists
+    FIGURE = auto()    # Visual voids delegated to VLM
+    TABLE = auto()     # Grid-aligned tabular data
 
 @dataclass(frozen=True, slots=True)
 class SpatialNode:
-    """
-    A discrete Unicode node mapped to Euclidean bounds.
-    Slotted for memory contiguity and performance.
-    """
     char: str
     x0: float
     y0: float

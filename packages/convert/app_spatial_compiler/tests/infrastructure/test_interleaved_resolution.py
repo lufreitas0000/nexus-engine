@@ -5,11 +5,6 @@ from app_spatial_compiler.src.infrastructure.cli import app
 runner = CliRunner()
 
 def test_cli_resolves_interleaved_text_and_math() -> None:
-    """
-    Asserts that a manifold with a text paragraph followed by a 
-    mathematical expression is resolved without the math logic 
-    consuming the text block.
-    """
     payload = [
         # Paragraph: "Hi" shifted to y=100 (Safe margin)
         {"char": "H", "x0": 10.0, "y0": 100.0, "x1": 12.0, "y1": 105.0},
@@ -24,8 +19,6 @@ def test_cli_resolves_interleaved_text_and_math() -> None:
     ]
     
     result = runner.invoke(app, [json.dumps(payload)])
-    
     assert result.exit_code == 0
-    # Both blocks must survive the reduction and avoid being treated as a void
     assert "Hi" in result.stdout
     assert "$$E=mc^{2}$$" in result.stdout
