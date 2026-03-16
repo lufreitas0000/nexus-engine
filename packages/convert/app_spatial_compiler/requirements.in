@@ -6,3 +6,4 @@ rich
 pytest
 mypy
 pip-tools
+pylatexenc
