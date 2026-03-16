@@ -127,3 +127,32 @@ def test_synthetic_fraction_topology():
     # Inject into pure domain morphism and assert structural reduction
 
 ```
+
+
+## Chapter 5: Current Implementation Milestones
+
+The current state of the module represents a transition from structural theory to a verified computational engine. The following components are operationally stable and verified via RAM-based synthetic manifolds:
+
+### 5.1 Verified Geometric Morphisms
+* **Recursive XY-Cut**: Implemented in `tessellation.py`. Correctly partitions 2D manifolds into an ordered $N$-ary tree of macroscopic blocks, resolving multi-column reading orders.
+* **Spatial KD-Tree**: Implemented in `spatial_tree.py`. Provides $O(\log N)$ neighborhood resolution with `__slots__` optimization for CPU cache locality.
+* **Math Topology Resolver**: Implemented in `math_topology.py`. Employs a multi-directional graph grammar to resolve subscripts, superscripts, and prescripts while enforcing strict horizontal proximity invariants.
+
+### 5.2 Infrastructure and Orchestration
+* **Submanifold Dispatching**: The `CompositeSpatialCompiler` implements contextual routing. It partitions the page into blocks and dispatches math-heavy manifolds to the LaTeX resolver and standard blocks to the baseline parser.
+* **POSIX-Compliant CLI**: The `typer` entry point supports `stdin` streaming, filesystem I/O, and telemetry segregation (metadata is routed to `stderr` via `rich.console`).
+* **Symbolic Normalization**: Automatic mapping of Unicode mathematical symbols (e.g., μ, ν) to their LaTeX equivalents (`\mu`, `\nu`).
+
+## Chapter 6: Path to Production Readiness
+
+To achieve full production reliability for generalized academic parsing, the following roadmap defines the next phase of development:
+
+### 6.1 Geometric Generality and Robustness
+* **Dynamic Page Dimensions**: Replace hardcoded A4 bounds with metadata-driven extraction to support varied journal formats (e.g., US Letter, B5).
+* **Automatic Threshold Calibration**: Transition from "greedy" constant thresholds to dynamic metrics derived from the median font height and width of the local manifold.
+* **Negative Testing Substrate**: Implement assertions for "corrupted" manifolds, including zero-width nodes, overlapping bounding boxes, and non-linear character segments.
+
+### 6.2 Advanced Mathematical Topologies
+* **Matrix Reconstruction**: Implement a 2D grid mapping algorithm to resolve multi-line environments such as `\begin{pmatrix} ... \end{pmatrix}`.
+* **Nested Fraction Stress-Testing**: Refine the recursive fraction resolver to handle deeply nested structures with significantly varying font scales.
+* **Operational Refactor**: Decouple the dispatching logic from the `infrastructure` layer into a dedicated `Application Service` to ensure the CLI remains a thin driving adapter.
