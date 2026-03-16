@@ -159,11 +159,65 @@ To achieve full production reliability for generalized academic parsing, the fol
 
 ## Chapter 7: The DMA Extraction Layer (PDF-to-Manifold)
 
-To bridge the gap between static PDF files and the geometric domain, we implement a Direct Memory Access (DMA) adapter. 
+To bridge the gap between static PDF files and the geometric domain, we implement a Direct Memory Access (DMA) adapter.
 
 ### 7.1 Coordinate System Normalization
 
-The `PDFExtractorAdapter` preserves the 2D Euclidean state of the `LTChar` objects. 
+The `PDFExtractorAdapter` preserves the 2D Euclidean state of the `LTChar` objects.
 1. **Euclidean Bounds**: Precise $L_x$ and $L_y$ extents are mapped to `SpatialNode`.
 2. **Margin Filtering**: Content residing in the top/bottom 50pt margins (headers/footers) is filtered out in the infrastructure layer to ensure the domain receives only the semantic manifold.
 3. **Typographic Scale**: Point-size metadata from `pdfminer` is preserved in the `font_size` attribute to drive relative bisection thresholds.
+
+
+
+
+
+## Chapter 8: Semantic Block Classification and Markdown Synthesis
+
+The final stage of the pipeline transforms ordered leaf manifolds into valid Markdown syntax. We avoid a monolithic "page-to-text" approach, opting instead for a **Classify-then-Synthesize** strategy.
+
+### 8.1 Deterministic Categorization (Enum and auto)
+
+We define a finite set of semantic roles using an `Enum`. In Python, an `Enum` (Enumeration) is a symbolic name for a set of constant values, providing type safety and preventing "magic string" bugs.
+
+```python
+from enum import Enum, auto
+
+class BlockType(Enum):
+    TEXT = auto()
+    MATH = auto()
+    HEADER = auto()
+    ITEMIZE = auto()
+    FIGURE = auto()
+
+```
+
+The `auto()` helper automatically assigns unique integer values to the members. This is the most efficient way to define mutually exclusive categories for our `BlockClassifier`.
+
+### 8.2 Markdown Synthesis Heuristics
+
+Each block is processed based on its classified `BlockType`:
+
+1. **Headers (`#`, `##`)**: We calculate the local median font size ($H_{median}$). If a block contains a single line and $H_{block} > 1.2 \times H_{median}$, it is synthesized as a header.
+2. **Emphasis (Bold/Italic)**: The `PDFExtractorAdapter` captures the font descriptor from the `LTChar` metadata. If the font name contains "Bold", we wrap the `SpatialNode` sequence in `**`. If it contains "Italic", we use `_`.
+3. **Itemization**: Blocks with high left-margin indentation and a leading bullet symbol (•, -, *) are synthesized with Markdown list syntax.
+4. **Math**: Blocks identified by mathematical operators or LaTeX symbols are wrapped in `$$` delimiters for display math.
+
+### 8.3 Rationale: Why Not Use Libraries like MarkitDown?
+
+While libraries like Microsoft's `MarkitDown` or VLM-based OCR tools exist, they are unsuitable for high-precision academic reconstruction for several reasons:
+
+| Feature | `app_spatial_compiler` (DMA) | VLM / OCR (e.g., MarkitDown) |
+| --- | --- | --- |
+| **Precision** | Deterministic (C-level coordinates) | Stochastic (Approximation) |
+| **Math** | Resolves complex tensors topologically | Often fails on nested fractions or indices |
+| **Cost** | Minimal CPU cycles ($O(N \log N)$) | High GPU/Token cost |
+| **Integrity** | Preserves original Unicode | Subject to "hallucinations" or typos |
+
+**Pros of our approach**: Absolute geometric accuracy, zero-cost execution on standard CPUs, and deterministic handling of multi-column layouts.
+**Cons**: Requires a natively digital PDF (DMA-capable); cannot process scanned images without a preceding OCR layer.
+
+### 8.4 The Most Efficient Path to Production
+
+To achieve a production-ready state, we will implement a **Structural Dispatcher** in the Application layer. This dispatcher will iterate over the blocks identified by the `Recursive XY-Cut`, query the `BlockClassifier`, and delegate the nodes to specialized `MarkdownSynthesizers`.
+
