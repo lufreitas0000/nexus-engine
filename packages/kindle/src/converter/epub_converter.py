@@ -17,20 +17,27 @@ def convert_markdown_to_epub(input_path: Path | str, output_path: Path | str | N
     with open(input_file, 'r', encoding='utf-8') as file_descriptor:
         source_content = file_descriptor.read()
 
+    # Phase 1: Regex boundary substitutions
     processed_content = re.sub(r'\[\[(.*?)\|(.*?)\]\]', r'[\2](\1.md)', source_content)
     processed_content = re.sub(r'\[\[(.*?)\]\]', r'[\1](\1.md)', processed_content)
+    
+    # Highlight Identity Mapping: ==text== -> text
+    processed_content = re.sub(r'==(.*?)==', r'\1', processed_content)
 
     with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as temp_buffer:
         temp_buffer.write(processed_content)
         temp_file_path = temp_buffer.name
 
-    # Inject mandatory metadata to bypass Amazon E999 validation failure
+    css_path = Path(__file__).parent / 'kindle.css'
+
+    # Phase 2: AST Compilation Execution Vector
     execution_vector = [
         'pandoc',
         temp_file_path,
         '-f', 'markdown',
         '-t', 'epub3',
         '--mathml',
+        '--css', str(css_path),
         '--metadata', f'title={input_file.stem}',
         '--metadata', 'language=pt-BR',
         '-o', str(output_file)
