@@ -20,9 +20,11 @@ def convert_markdown_to_epub(input_path: Path | str, output_path: Path | str | N
     # Phase 1: Regex boundary substitutions
     processed_content = re.sub(r'\[\[(.*?)\|(.*?)\]\]', r'[\2](\1.md)', source_content)
     processed_content = re.sub(r'\[\[(.*?)\]\]', r'[\1](\1.md)', processed_content)
-    
-    # Highlight Identity Mapping: ==text== -> text
     processed_content = re.sub(r'==(.*?)==', r'\1', processed_content)
+
+    # Phase 2: Metadata Extraction
+    title_match = re.search(r'^#\s+(.+)$', source_content, flags=re.MULTILINE)
+    document_title = title_match.group(1).strip() if title_match else input_file.stem
 
     with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as temp_buffer:
         temp_buffer.write(processed_content)
@@ -30,7 +32,7 @@ def convert_markdown_to_epub(input_path: Path | str, output_path: Path | str | N
 
     css_path = Path(__file__).parent / 'kindle.css'
 
-    # Phase 2: AST Compilation Execution Vector
+    # Phase 3: AST Compilation Execution Vector
     execution_vector = [
         'pandoc',
         temp_file_path,
@@ -38,7 +40,8 @@ def convert_markdown_to_epub(input_path: Path | str, output_path: Path | str | N
         '-t', 'epub3',
         '--mathml',
         '--css', str(css_path),
-        '--metadata', f'title={input_file.stem}',
+        '--metadata', f'title={document_title}',
+        '--metadata', 'author=Freitas',
         '--metadata', 'language=pt-BR',
         '-o', str(output_file)
     ]
