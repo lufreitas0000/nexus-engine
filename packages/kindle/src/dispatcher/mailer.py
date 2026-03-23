@@ -1,15 +1,10 @@
 import smtplib
-import mimetypes
+import sys
 from email.message import EmailMessage
 from pathlib import Path
 from src.dispatcher.config import SmtpConfig
 
-def dispatch_epub_to_kindle(
-    epub_path: Path | str, 
-    config: SmtpConfig, 
-    smtp_host: str = "smtp.gmail.com", 
-    smtp_port: int = 587
-) -> None:
+def dispatch_epub_to_kindle(epub_path: Path | str, config: SmtpConfig) -> None:
     target_file = Path(epub_path).resolve()
     
     if not target_file.exists():
@@ -31,15 +26,25 @@ def dispatch_epub_to_kindle(
         filename=target_file.name
     )
 
+    sys.stdout.write(f"Initiating SMTP connection to {config.host}:{config.port}...\n")
     try:
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
+        with smtplib.SMTP(config.host, config.port) as server:
             server.ehlo()
+            sys.stdout.write("EHLO sequence accepted.\n")
+            
             server.starttls()
+            sys.stdout.write("TLS encryption established.\n")
+            
             server.ehlo()
+            
+            sys.stdout.write(f"Attempting authentication for user: {config.sender}...\n")
             server.login(config.sender, config.password)
+            sys.stdout.write("Authentication successful.\n")
+            
+            sys.stdout.write("Transmitting binary payload...\n")
             server.send_message(message)
     except smtplib.SMTPException as network_error:
         raise RuntimeError(
-            f"SMTP dispatch failed during network transmission.\n"
+            f"SMTP protocol failure during state machine execution.\n"
             f"Protocol trace: {network_error}"
         ) from network_error
