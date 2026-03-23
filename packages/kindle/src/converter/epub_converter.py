@@ -24,12 +24,15 @@ def convert_markdown_to_epub(input_path: Path | str, output_path: Path | str | N
         temp_buffer.write(processed_content)
         temp_file_path = temp_buffer.name
 
+    # Inject mandatory metadata to bypass Amazon E999 validation failure
     execution_vector = [
         'pandoc',
         temp_file_path,
         '-f', 'markdown',
         '-t', 'epub3',
         '--mathml',
+        '--metadata', f'title={input_file.stem}',
+        '--metadata', 'language=pt-BR',
         '-o', str(output_file)
     ]
 
