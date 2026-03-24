@@ -4,5 +4,7 @@
 #
 #    pip-compile requirements.in
 #
+pypdf==6.9.2
+    # via -r requirements.in
 python-dotenv==1.2.2
     # via -r requirements.in
