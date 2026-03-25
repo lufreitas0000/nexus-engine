@@ -1,105 +1,91 @@
 import fitz
 import sys
+import statistics
 from pathlib import Path
 
-def calculate_global_safe_zone(input_path: Path, sample_rate: float = 0.15) -> tuple[float, float, float, float]:
+def calculate_global_safe_zone(input_path: Path, sample_rate: float = 0.20) -> tuple[float, float]:
     """
-    Samples core pages to determine aggressive Y-axis boundaries with verbose logging.
-    Returns a (x0, y0, x1, y1) Safe Zone.
+    Calculates ONLY the Y-axis bounds (top_cut, bottom_cut).
+    Returns a 2-tuple to preserve native X geometry.
     """
     doc = fitz.open(input_path)
     total_pages = len(doc)
 
-    base_rect = doc[0].rect
-    width = base_rect.width
-    height = base_rect.height
+    if total_pages == 0:
+        return (0.0, 792.0)
 
-    if total_pages < 10:
-        pages_to_sample = list(range(total_pages))
-    else:
-        start_idx = int(total_pages * 0.1)
-        end_idx = int(total_pages * 0.9)
-        sample_size = max(1, int(total_pages * sample_rate))
-        step = max(1, (end_idx - start_idx) // sample_size)
-        pages_to_sample = list(range(start_idx, end_idx, step))
+    height = doc[0].rect.height
 
-    top_boundaries = []
-    bottom_boundaries = []
+    start_idx = int(total_pages * 0.1)
+    end_idx = int(total_pages * 0.9)
+    sample_size = max(1, int((end_idx - start_idx) * sample_rate))
+    step = max(1, (end_idx - start_idx) // sample_size)
+    if step == 0: step = 1
 
-    sys.stdout.write(f"\n--- Initiating Boundary Diagnostic [Total Pages: {total_pages}] ---\n")
-    sys.stdout.write(f"Page Height: {height:.1f} | Search Zone: Top {height*0.25:.1f}, Bottom {height*0.75:.1f}\n")
+    pages_to_sample = list(range(start_idx, end_idx, step))
+
+    top_cuts = []
+    bottom_cuts = []
+
+    sys.stdout.write("\n--- Precise Y-Axis Boundary Diagnostic ---\n")
 
     for page_num in pages_to_sample:
         page = doc[page_num]
+        h = page.rect.height
         blocks = page.get_text("blocks")
         if not blocks: continue
 
         text_blocks = [b for b in blocks if b[6] == 0]
-        if not text_blocks: continue
+        if len(text_blocks) < 2: continue
 
-        sys.stdout.write(f"\n[Page {page_num}] Top-Down Analysis:\n")
+        # --- Top Boundary: Strict First-Block Isolation ---
         text_blocks.sort(key=lambda b: b[1])
+        first_block = text_blocks[0]
+        second_block = text_blocks[1]
 
-        # Top Boundary
-        for i in range(len(text_blocks) - 1):
-            current = text_blocks[i]
-            next_blk = text_blocks[i+1]
-            gap = next_blk[1] - current[3]
-            text_snippet = current[4].replace('\n', ' ').strip()[:30]
+        if first_block[1] < h * 0.12:
+            gap = second_block[1] - first_block[3]
+            if gap > 14:
+                top_cuts.append(first_block[3] + 2)
 
-            sys.stdout.write(f"  Block: '{text_snippet}' | y1: {current[3]:.1f} | Next y0: {next_blk[1]:.1f} | Gap: {gap:.1f}\n")
-
-            # Lowered gap threshold to 10pt
-            if gap > 10 and current[3] < height * 0.25:
-                # Add a 2pt buffer below the top block
-                top_bound = next_blk[1] - 2
-                sys.stdout.write(f"  >>> TOP BOUNDARY TRIGGERED at Y={top_bound:.1f}\n")
-                top_boundaries.append(top_bound)
-                break
-
-        sys.stdout.write(f"[Page {page_num}] Bottom-Up Analysis:\n")
+        # --- Bottom Boundary: Strict Last-Block Isolation ---
         text_blocks.sort(key=lambda b: b[3], reverse=True)
+        last_block = text_blocks[0]
+        second_to_last = text_blocks[1]
 
-        # Bottom Boundary
-        for i in range(len(text_blocks) - 1):
-            current = text_blocks[i]
-            prev_blk = text_blocks[i+1]
-            gap = current[1] - prev_blk[3]
-            text_snippet = current[4].replace('\n', ' ').strip()[:30]
-
-            sys.stdout.write(f"  Block: '{text_snippet}' | y0: {current[1]:.1f} | Prev y1: {prev_blk[3]:.1f} | Gap: {gap:.1f}\n")
-
-            if gap > 10 and current[1] > height * 0.75:
-                bottom_bound = prev_blk[3] + 2
-                sys.stdout.write(f"  >>> BOTTOM BOUNDARY TRIGGERED at Y={bottom_bound:.1f}\n")
-                bottom_boundaries.append(bottom_bound)
-                break
+        if last_block[3] > h * 0.88:
+            gap = last_block[1] - second_to_last[3]
+            if gap > 14:
+                bottom_cuts.append(last_block[1] - 2)
 
     doc.close()
 
-    final_top = max(top_boundaries) if top_boundaries else height * 0.12
-    final_bottom = min(bottom_boundaries) if bottom_boundaries else height * 0.88
+    final_top = statistics.median(top_cuts) if top_cuts else 0.0
+    final_bottom = statistics.median(bottom_cuts) if bottom_cuts else height
 
-    if final_top > height * 0.30: final_top = height * 0.12
-    if final_bottom < height * 0.70: final_bottom = height * 0.88
+    # Hard constraints to prevent catastrophic Y-axis excision
+    if final_top > height * 0.12: final_top = 0.0
+    if final_bottom < height * 0.88: final_bottom = height
 
-    sys.stdout.write(f"\n--- Global Safe Zone Calculated ---\n")
-    sys.stdout.write(f"Top Boundary Cut: {final_top:.1f}\n")
-    sys.stdout.write(f"Bottom Boundary Cut: {final_bottom:.1f}\n")
-    sys.stdout.write(f"-----------------------------------\n\n")
+    sys.stdout.write(f"Calculated Safe Y-Zone: Top={final_top:.1f}, Bottom={final_bottom:.1f}\n")
     sys.stdout.flush()
 
-    return (0, final_top, width, final_bottom)
+    return (final_top, final_bottom)
 
-def apply_dynamic_crop(input_path: Path, output_path: Path, safe_zone: tuple[float, float, float, float]) -> Path:
+def apply_dynamic_crop(input_path: Path, output_path: Path, safe_zone: tuple[float, float]) -> Path:
+    top_cut, bottom_cut = safe_zone
     doc = fitz.open(input_path)
-    crop_rect = fitz.Rect(*safe_zone)
 
     for page in doc:
-        page.set_cropbox(crop_rect)
-        page.set_mediabox(crop_rect)
-        page.set_trimbox(crop_rect)
-        page.set_artbox(crop_rect)
+        r = page.rect
+        # CRITICAL FIX: Preserve native r.x0 and r.x1. Mutate only the Y-axis.
+        new_rect = fitz.Rect(r.x0, top_cut, r.x1, bottom_cut)
+
+        page.set_artbox(new_rect)
+        page.set_bleedbox(new_rect)
+        page.set_trimbox(new_rect)
+        page.set_cropbox(new_rect)
+        page.set_mediabox(new_rect)
 
     doc.save(output_path)
     doc.close()
