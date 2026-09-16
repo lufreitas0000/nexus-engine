@@ -9,8 +9,12 @@ fi
 LOG_FILE="docs/execution.log"
 echo "[*] Initializing pipeline execution. Full logs routed to $LOG_FILE"
 
+# Force marker and surya to use local PyTorch instead of spawning vLLM Docker containers
+export INFERENCE_BACKEND="torch"
+export SURYA_BACKEND="torch"
+export CUDA_VISIBLE_DEVICES="0"
+
 # Execute Python state-machine, redirecting stdout and stderr to tee
-# This ensures that even if the terminal drops, the exact crash reason is written to disk.
 poetry run python src/main.py run-pipeline "$@" 2>&1 | tee "$LOG_FILE"
 
 EXIT_CODE=${PIPESTATUS[0]}
