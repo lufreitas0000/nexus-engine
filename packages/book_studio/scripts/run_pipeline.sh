@@ -11,8 +11,8 @@ echo "[*] Initializing pipeline execution. Full logs routed to $LOG_FILE"
 
 echo "[*] Starting local vLLM inference server on RTX 3050 (Isolated Env)..."
 ./infra/vllm_env/bin/vllm serve "datalab-to/surya-ocr-2" \
-    --gpu-memory-utilization 0.90 \
-    --max-model-len 4096 \
+    --gpu-memory-utilization 0.75 \
+    --max-model-len 2048 \
     > docs/vllm.log 2>&1 &
 VLLM_PID=$!
 
