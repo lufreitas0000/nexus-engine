@@ -9,20 +9,16 @@ fi
 LOG_FILE="docs/execution.log"
 echo "[*] Initializing pipeline execution. Full logs routed to $LOG_FILE"
 
-# Spawn the native vLLM server to bypass the Docker requirement
-echo "[*] Starting local vLLM inference server on RTX 3050..."
-# Cap VRAM usage at 90% to prevent CUDA OOM during sequence generation
-poetry run vllm serve "datalab-to/surya-ocr-2" \
+echo "[*] Starting local vLLM inference server on RTX 3050 (Isolated Env)..."
+./infra/vllm_env/bin/vllm serve "datalab-to/surya-ocr-2" \
     --gpu-memory-utilization 0.90 \
     --max-model-len 4096 \
     > docs/vllm.log 2>&1 &
 VLLM_PID=$!
 
-# Ensure the background server is deterministically killed when the script terminates
 trap "kill \$VLLM_PID 2>/dev/null" EXIT
 
 echo "[*] Waiting for Vision-Language Model to load into VRAM..."
-# Poll the server until it responds (timeout after 2.5 minutes)
 TIMEOUT=150
 while ! curl -s http://127.0.0.1:8000/v1/models > /dev/null 2>&1; do
     sleep 5
@@ -34,12 +30,10 @@ while ! curl -s http://127.0.0.1:8000/v1/models > /dev/null 2>&1; do
 done
 echo "[*] VLM server healthy and bound to port 8000."
 
-# Force Marker/Surya to attach to our native server and disable Docker spawning
 export SURYA_INFERENCE_URL="http://127.0.0.1:8000/v1"
 export SURYA_INFERENCE_AUTOSTART="False"
 export CUDA_VISIBLE_DEVICES="0"
 
-# Execute Python state-machine
 poetry run python src/main.py run-pipeline "$@" 2>&1 | tee -a "$LOG_FILE"
 EXIT_CODE=${PIPESTATUS[0]}
 
