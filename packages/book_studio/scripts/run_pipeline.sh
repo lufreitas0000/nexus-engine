@@ -9,13 +9,18 @@ fi
 LOG_FILE="docs/execution.log"
 echo "[*] Initializing pipeline execution. Full logs routed to $LOG_FILE"
 
-# WSL2 compatibility: Force pinned memory to enable Unified Virtual Addressing (UVA) for the V2 runner
+# Insert your specific Hugging Face token here
+export HF_TOKEN="<REPLACE_WITH_YOUR_ACTUAL_HF_TOKEN>"
+
+# WSL2 compatibility: Force pinned memory to enable Unified Virtual Addressing (UVA)
 export VLLM_WSL2_ENABLE_PIN_MEMORY=1
 
 echo "[*] Starting local vLLM inference server on RTX 3050 (Isolated Env)..."
+# --enforce-eager prevents the RAM-heavy CUDA graph compilation phase
 ./infra/vllm_env/bin/vllm serve "datalab-to/surya-ocr-2" \
     --gpu-memory-utilization 0.75 \
     --max-model-len 2048 \
+    --enforce-eager \
     > docs/vllm.log 2>&1 &
 VLLM_PID=$!
 
