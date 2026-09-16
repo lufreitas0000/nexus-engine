@@ -9,6 +9,9 @@ fi
 LOG_FILE="docs/execution.log"
 echo "[*] Initializing pipeline execution. Full logs routed to $LOG_FILE"
 
+# WSL2 compatibility: Force pinned memory to enable Unified Virtual Addressing (UVA) for the V2 runner
+export VLLM_WSL2_ENABLE_PIN_MEMORY=1
+
 echo "[*] Starting local vLLM inference server on RTX 3050 (Isolated Env)..."
 ./infra/vllm_env/bin/vllm serve "datalab-to/surya-ocr-2" \
     --gpu-memory-utilization 0.75 \
