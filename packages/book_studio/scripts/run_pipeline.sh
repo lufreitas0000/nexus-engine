@@ -9,16 +9,14 @@ fi
 LOG_FILE="docs/execution.log"
 echo "[*] Initializing pipeline execution. Full logs routed to $LOG_FILE"
 
-# WSL2 compatibility: Force pinned memory to enable Unified Virtual Addressing (UVA)
 export VLLM_WSL2_ENABLE_PIN_MEMORY=1
 
 echo "[*] Starting local vLLM inference server on RTX 3050 (Isolated Env)..."
-# Reduced utilization to 0.35 (2.1GB) to leave VRAM for auxiliary layout models.
-# Added --limit-mm-per-prompt to prevent massive system RAM cache profiling spikes.
+# The --limit-mm-per-prompt parameter requires a strict JSON dictionary payload.
 ./infra/vllm_env/bin/vllm serve "datalab-to/surya-ocr-2" \
     --gpu-memory-utilization 0.35 \
     --max-model-len 2048 \
-    --limit-mm-per-prompt image=1 \
+    --limit-mm-per-prompt '{"image": 1}' \
     --enforce-eager \
     > docs/vllm.log 2>&1 &
 VLLM_PID=$!
