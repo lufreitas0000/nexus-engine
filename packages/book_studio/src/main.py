@@ -22,7 +22,13 @@ def load_state(path: Path) -> ExtractionResult:
     return ExtractionResult(**data)
 
 def dvc_track(path: Path) -> None:
-    subprocess.run(["dvc", "add", str(path)], check=True, capture_output=True)
+    try:
+        subprocess.run(["dvc", "add", str(path)], check=True, capture_output=True, text=True)
+        print(f"[*] DVC successfully tracked state: {path}")
+    except subprocess.CalledProcessError as e:
+        print(f"[!] WARNING: DVC failed to track {path}. Bypassing tracking constraint to continue pipeline.")
+        if e.stderr:
+            print(f"    DVC Stderr: {e.stderr.strip()}")
 
 @click.group()
 def cli():
