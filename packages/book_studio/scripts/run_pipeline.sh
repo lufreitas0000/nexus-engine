@@ -9,17 +9,16 @@ fi
 LOG_FILE="docs/execution.log"
 echo "[*] Initializing pipeline execution. Full logs routed to $LOG_FILE"
 
-# Insert your specific Hugging Face token here
-export HF_TOKEN="<REPLACE_WITH_YOUR_ACTUAL_HF_TOKEN>"
-
 # WSL2 compatibility: Force pinned memory to enable Unified Virtual Addressing (UVA)
 export VLLM_WSL2_ENABLE_PIN_MEMORY=1
 
 echo "[*] Starting local vLLM inference server on RTX 3050 (Isolated Env)..."
-# --enforce-eager prevents the RAM-heavy CUDA graph compilation phase
+# Reduced utilization to 0.35 (2.1GB) to leave VRAM for auxiliary layout models.
+# Added --limit-mm-per-prompt to prevent massive system RAM cache profiling spikes.
 ./infra/vllm_env/bin/vllm serve "datalab-to/surya-ocr-2" \
-    --gpu-memory-utilization 0.75 \
+    --gpu-memory-utilization 0.35 \
     --max-model-len 2048 \
+    --limit-mm-per-prompt image=1 \
     --enforce-eager \
     > docs/vllm.log 2>&1 &
 VLLM_PID=$!
