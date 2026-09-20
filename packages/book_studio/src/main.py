@@ -40,7 +40,7 @@ def cli():
 @click.option('--skip-ocr', is_flag=True, help="Skip extraction and load from 02_segmented state.")
 def run_pipeline(pdf_path: Path, skip_ocr: bool):
     project_root = get_project_root()
-    
+
     dir_segmented = project_root / "data" / "02_segmented"
     dir_stitched = project_root / "data" / "03_stitched"
     dir_verified = project_root / "data" / "04_verified"
@@ -66,7 +66,7 @@ def run_pipeline(pdf_path: Path, skip_ocr: bool):
     # Stage 1.5: Asset Routing and Placeholder Injection
     click.echo("[*] Stage 1.5: Routing visual assets and injecting placeholders...")
     # marker-pdf saves images in a subfolder named after the PDF stem
-    source_img_dir = dir_segmented / pdf_path.stem 
+    source_img_dir = dir_segmented / pdf_path.stem
     asset_manager = AssetManager(dir_assets)
     asset_data = asset_manager.process_and_route(raw_data, source_img_dir)
 
@@ -78,8 +78,10 @@ def run_pipeline(pdf_path: Path, skip_ocr: bool):
     dvc_track(state_stitched)
 
     # Stage 3: Verification (Agent Interception Point)
-    click.echo("[*] Stage 3: Agent Verification Hook (Pass-through for now)...")
-    verified_data = stitched_data 
+    click.echo("[*] Stage 3: Agent Verification Hook...")
+    from src.agents.orchestrator import AgentOrchestrator
+    orchestrator = AgentOrchestrator()
+    verified_data = orchestrator.verify_document(stitched_data)
     save_state(verified_data, state_verified)
     dvc_track(state_verified)
 
@@ -87,7 +89,7 @@ def run_pipeline(pdf_path: Path, skip_ocr: bool):
     click.echo("[*] Stage 4: Semantic Chunking and Assembly...")
     assembler = Assembler(dir_md, dir_tex)
     assembler.assemble(verified_data)
-    
+
     click.echo("[*] Pipeline execution complete. Outputs generated in 06_final_md and 07_final_tex.")
 
 if __name__ == "__main__":

@@ -24,8 +24,7 @@ echo "[*] Starting local vLLM inference server on RTX 3050 (Isolated Env)..."
     --max-num-seqs 1 \
     --limit-mm-per-prompt '{"image": 1, "video": 0}' \
     --mm-processor-kwargs '{"max_pixels": 313600}' \
-    --enforce-eager \
-    > docs/vllm.log 2>&1 &
+    --enforce-eager &
 VLLM_PID=$!
 
 # Use pkill -P to aggressively terminate all multiprocess workers (which hold PyTorch CUDA context) to free GPU memory

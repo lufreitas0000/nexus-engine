@@ -6,13 +6,13 @@ from src.core.schemas import ExtractionResult, Block, Page
 
 class SemanticChunker:
     """Deterministically identifies headings and groups stitched blocks into atomic chapters/sections."""
-    
+
     def __init__(self):
         # Matches "Chapter 1: Title", "1 Title", "Chapter 1 - Title"
         self.chap_regex = re.compile(r"^(?:Chapter\s+)?(\d+)\s*[:.-]?\s+(.+)$", re.IGNORECASE)
         # Matches "1.2 The Schrodinger Equation"
         self.sec_regex = re.compile(r"^(\d+)\.(\d+)\s+(.+)$")
-        
+
         self.current_chapter = 0
         self.current_section = 0
 
@@ -30,26 +30,28 @@ class SemanticChunker:
                 content = block.content.strip()
                 if not content:
                     continue
-                
-                # Verify block type heuristically, overriding OCR metadata
-                sec_match = self.sec_regex.match(content)
-                chap_match = self.chap_regex.match(content)
 
-                if chap_match or sec_match:
+                # Strip HTML tags for regex matching
+                clean_text = re.sub(r'<[^>]+>', '', content).strip()
+
+                is_header = block.block_type == "SectionHeader"
+                chap_match = self.chap_regex.match(clean_text) if is_header else None
+
+                # It's a new atomic chunk if it matches Chapter regex OR is any SectionHeader
+                if is_header and len(clean_text) < 150:
                     if current_chunk:
                         chunks.append(current_chunk)
-                    
+
                     if chap_match:
                         self.current_chapter = int(chap_match.group(1))
                         self.current_section = 0
                         title = chap_match.group(2)
-                    elif sec_match:
-                        self.current_chapter = int(sec_match.group(1))
-                        self.current_section = int(sec_match.group(2))
-                        title = sec_match.group(3)
-                    
+                    else:
+                        self.current_section += 1
+                        title = clean_text
+
                     filename = f"{self.current_chapter:02d}_{self.current_section:02d}_{self._slugify(title)}"
-                    
+
                     current_chunk = {
                         "chapter": self.current_chapter,
                         "section": self.current_section,
@@ -69,15 +71,15 @@ class SemanticChunker:
                             "blocks": []
                         }
                     current_chunk["blocks"].append(content)
-        
+
         if current_chunk:
             chunks.append(current_chunk)
-        
+
         return chunks
 
 class Assembler:
     """Consumes semantic chunks and writes dual Markdown and LaTeX files."""
-    
+
     def __init__(self, output_md: Path, output_tex: Path):
         self.output_md = output_md
         self.output_tex = output_tex
@@ -87,7 +89,7 @@ class Assembler:
 
     def assemble(self, stitched_data: ExtractionResult) -> None:
         chunks = self.chunker.verify_and_chunk(stitched_data)
-        
+
         for chunk in chunks:
             self._write_markdown(chunk)
             self._write_tex(chunk)
@@ -102,13 +104,13 @@ class Assembler:
             "chapter": chunk["chapter"],
             "section": chunk["section"]
         }
-        
+
         yaml_header = yaml.dump(frontmatter, sort_keys=False, allow_unicode=True)
-        
+
         md_content = f"---\n{yaml_header}---\n\n"
         md_content += f"# {chunk['title']}\n\n"
         md_content += "\n\n".join(chunk["blocks"])
-        
+
         md_file = self.output_md / f"{chunk['filename']}.md"
         md_file.write_text(md_content, encoding="utf-8")
 
@@ -116,6 +118,6 @@ class Assembler:
         # Frontmatter skipped for LaTeX; basic sectional mapping used instead
         tex_content = f"\\section{{{chunk['title']}}}\n\n" if chunk["section"] > 0 else f"\\chapter{{{chunk['title']}}}\n\n"
         tex_content += "\n\n".join(chunk["blocks"])
-        
+
         tex_file = self.output_tex / f"{chunk['filename']}.tex"
         tex_file.write_text(tex_content, encoding="utf-8")

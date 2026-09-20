@@ -5,6 +5,7 @@ class Block(BaseModel):
     id: str
     block_type: str
     content: Optional[str] = ""
+    polygon: Optional[List[List[float]]] = None
 
 class Page(BaseModel):
     page_number: Optional[int] = None
