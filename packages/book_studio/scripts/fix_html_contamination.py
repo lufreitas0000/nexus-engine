@@ -62,21 +62,21 @@ def strip_html_tags(text: str) -> str:
 def fix_tex_file(path: Path) -> bool:
     """Fix HTML contamination in a single .tex file. Returns True if modified."""
     original = path.read_text(encoding='utf-8', errors='replace')
-    
+
     if '<' not in original and '&amp;' not in original:
         return False  # No HTML, skip
-    
+
     # Handle TOC table files — convert to LaTeX comment block
     if '<table>' in original or '<thead>' in original:
         section_match = re.match(r'(\\section\*?\{[^}]+\})', original)
         section_line = section_match.group(1) if section_match else ''
-        
+
         # Extract all tables
         tables = re.findall(r'<table>.*?</table>', original, re.DOTALL)
         latex_toc = []
         for table in tables:
             latex_toc.append(parse_html_table_to_latex(table))
-        
+
         result = (
             f"{section_line}\n\n"
             "% \\tableofcontents  % (Rendered by LaTeX automatically from main document)\n"
@@ -85,17 +85,17 @@ def fix_tex_file(path: Path) -> bool:
         for entry in '\n'.join(latex_toc).split('\n'):
             if entry.strip():
                 result += f"% {entry}\n"
-        
+
         path.write_text(result, encoding='utf-8')
         return True
-    
+
     # Handle other HTML-contaminated files
     cleaned = strip_html_tags(original)
-    
+
     if cleaned != original:
         path.write_text(cleaned, encoding='utf-8')
         return True
-    
+
     return False
 
 
@@ -104,7 +104,7 @@ def fix_publisher_page(path: Path) -> bool:
     text = path.read_text(encoding='utf-8', errors='replace')
     if 'Taylor' not in text and '<h2>' not in text:
         return False
-    
+
     new_content = (
         "\\section*{Publisher Information}\n\n"
         "\\begin{center}\n"
@@ -127,11 +127,11 @@ def main(tex_dir: Path):
                 print(f"  [PUBLISHER] Fixed: {f.name}")
                 modified += 1
                 continue
-        
+
         if fix_tex_file(f):
             print(f"  [HTML->LaTeX] Fixed: {f.name}")
             modified += 1
-    
+
     print(f"\nDone. Modified {modified}/{len(files)} files.")
 
 
@@ -141,3 +141,4 @@ if __name__ == '__main__':
     else:
         target = Path('books/baym_quantum_mechanics_1969/04_final_tex')
     main(target)
+

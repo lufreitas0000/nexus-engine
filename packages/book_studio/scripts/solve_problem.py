@@ -44,7 +44,7 @@ def extract_problems(md_text: str) -> dict[int, str]:
     # Split on top-level numbered items
     pattern = r'(?=^(\d+)\.\s)'
     parts = re.split(pattern, md_text, flags=re.MULTILINE)
-    
+
     problems = {}
     i = 0
     while i < len(parts):
@@ -83,7 +83,7 @@ def write_solution_template(
     """Write a solution template file. Agents fill in the sections."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     today = datetime.date.today().isoformat()
-    
+
     content = f"""---
 problem_id: {book_id}_ch{chapter:02d}_p{problem_num:02d}
 source_book: {book_id}
@@ -210,7 +210,7 @@ $$
               help='Difficulty override')
 def main(book, chapter, problem, problems_file, solve_all, difficulty):
     """Generate solution template(s) for physics problems."""
-    
+
     # Locate book root
     if book:
         book_root = Path(f'books/{book}')
@@ -267,13 +267,13 @@ def main(book, chapter, problem, problems_file, solve_all, difficulty):
         if pnum not in problems:
             click.echo(f"  [!] Problem {pnum} not found in {prob_file.name}")
             continue
-        
+
         out_path = solutions_dir / f'ch{chapter:02d}_p{pnum:02d}.md'
-        
+
         if out_path.exists():
             click.echo(f"  [skip] {out_path.name} already exists — use --overwrite to regenerate")
             continue
-        
+
         write_solution_template(out_path, book, chapter, pnum, problems[pnum], difficulty)
         click.echo(f"  [✓] Created: {out_path}")
 
@@ -285,3 +285,4 @@ def main(book, chapter, problem, problems_file, solve_all, difficulty):
 
 if __name__ == '__main__':
     main()
+

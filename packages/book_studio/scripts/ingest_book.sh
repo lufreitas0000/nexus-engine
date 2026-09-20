@@ -48,3 +48,4 @@ python3 src/main.py run-pipeline "$BOOK_YAML" $EXTRA_ARGS
 echo ""
 echo "Pipeline done. To compile the book:"
 echo "  python3 src/main.py compile $BOOK_YAML"
+
