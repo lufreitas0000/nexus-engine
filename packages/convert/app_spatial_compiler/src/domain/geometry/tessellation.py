@@ -34,15 +34,28 @@ def _find_maximal_cut(nodes: Sequence[SpatialNode], axis: str) -> tuple[int | No
 
     return cut_idx, best_gap, sorted_nodes
 
-def get_spatial_blocks(nodes: Sequence[SpatialNode], min_dx: float = 10.0, min_dy: float = 2.0) -> list[list[SpatialNode]]:
+def get_spatial_blocks(nodes: Sequence[SpatialNode], min_dx: float = -1.0, min_dy: float = -1.0) -> list[list[SpatialNode]]:
     """
     Partitions a 2D Euclidean manifold into discrete blocks using recursive XY-cuts.
-    Returns the leaf manifolds of the bisection tree as an ordered list.
+    If dx/dy thresholds are < 0, dynamically scales them to the median manifold size.
     """
     if not nodes:
         return []
     if len(nodes) <= 1:
         return [list(nodes)]
+
+    # Dynamic scaling Phase 2
+    if min_dx < 0 or min_dy < 0:
+        w_vals = sorted(n.width for n in nodes if n.width > 0)
+        h_vals = sorted(n.height for n in nodes if n.height > 0)
+        if w_vals and h_vals:
+            median_w = w_vals[len(w_vals)//2]
+            median_h = h_vals[len(h_vals)//2]
+            min_dx = min_dx if min_dx > 0 else median_w * 2.0
+            min_dy = min_dy if min_dy > 0 else median_h * 0.5
+        else:
+            min_dx = 10.0
+            min_dy = 2.0
 
     x_idx, x_gap, x_sorted = _find_maximal_cut(nodes, 'x')
     y_idx, y_gap, y_sorted = _find_maximal_cut(nodes, 'y')
@@ -53,14 +66,36 @@ def get_spatial_blocks(nodes: Sequence[SpatialNode], min_dx: float = 10.0, min_d
     if x_ratio < 0 and y_ratio < 0:
         return [list(nodes)]
 
-    if x_ratio >= y_ratio:
-        return get_spatial_blocks(x_sorted[:x_idx], min_dx, min_dy) + \
-               get_spatial_blocks(x_sorted[x_idx:], min_dx, min_dy)
-    else:
+    if y_ratio >= x_ratio:
         return get_spatial_blocks(y_sorted[:y_idx], min_dx, min_dy) + \
                get_spatial_blocks(y_sorted[y_idx:], min_dx, min_dy)
+    else:
+        left_nodes = sorted(x_sorted[:x_idx], key=lambda n: n.y0)
+        right_nodes = sorted(x_sorted[x_idx:], key=lambda n: n.y0)
+        return get_spatial_blocks(left_nodes, min_dx, min_dy) + \
+               get_spatial_blocks(right_nodes, min_dx, min_dy)
 
-def recursive_xy_cut(nodes: Sequence[SpatialNode], min_dx: float = 10.0, min_dy: float = 2.0) -> list[SpatialNode]:
+def recursive_xy_cut(nodes: Sequence[SpatialNode], min_dx: float = -1.0, min_dy: float = -1.0) -> list[SpatialNode]:
+    # Dynamic thresholds fallback Phase 2
+    if min_dx < 0 or min_dy < 0:
+        w_vals = sorted(n.width for n in nodes if n.width > 0)
+        h_vals = sorted(n.height for n in nodes if n.height > 0)
+        if w_vals and h_vals:
+            median_w = w_vals[len(w_vals)//2]
+            median_h = h_vals[len(h_vals)//2]
+            min_dx = min_dx if min_dx > 0 else median_w * 2.0
+            min_dy = min_dy if min_dy > 0 else median_h * 0.5
+        else:
+            min_dx = 10.0
+            min_dy = 2.0
+
+    x_idx, x_gap, x_sorted = _find_maximal_cut(nodes, 'x')
+
+    if x_gap is not None and x_gap >= min_dx:
+        left_col = recursive_xy_cut(x_sorted[:x_idx], min_dx, min_dy)
+        right_col = recursive_xy_cut(x_sorted[x_idx:], min_dx, min_dy)
+        return left_col + right_col
+
     blocks = get_spatial_blocks(nodes, min_dx, min_dy)
     flattened = []
     for block in blocks:
