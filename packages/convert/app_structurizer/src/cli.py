@@ -10,7 +10,8 @@ from rich.console import Console
 from rich.panel import Panel
 
 from src.services.extraction import extract_document_to_markdown
-from src.domain.ports import VisionExtractor
+from src.domain.ports import VisionExtractor, SpatialCompiler, VisionEncoder
+from src.domain.services.topology import PdfTopologyAnalyzer
 
 app = typer.Typer(help="Semantic PDF Structurizer: Map continuous PDF tensors to discrete Markdown ASTs.")
 console = Console()
@@ -32,6 +33,15 @@ def _get_hardware_info() -> str:
         return "[yellow]CPU (Standard RAM)[/yellow]"
     except ImportError:
         return "[red]Unknown (PyTorch not installed)[/red]"
+
+class FakeSpatialCompiler(SpatialCompiler):
+    def compile_graph(self, nodes) -> "MarkdownAST":
+        from src.domain.models import MarkdownAST
+        return MarkdownAST(content="# Fake Spatial Compiler AST", metadata={})
+
+class FakeVisionEncoder(VisionEncoder):
+    def encode_tensor(self, image_bytes: bytes) -> str:
+        return "[ALT Text] Mock"
 
 @app.command()
 def extract(
@@ -62,7 +72,19 @@ def extract(
 
     try:
         console.print("[dim]Initiating mathematical mapping (Continuous -> Discrete)...[/dim]")
-        out_file = extract_document_to_markdown(file_path, extractor, output_dir)
+        # Provide real analyzer and fake secondary adapters as fallback for CLI when incomplete
+        topology_analyzer = PdfTopologyAnalyzer()
+        spatial_compiler = FakeSpatialCompiler()
+        vision_encoder = FakeVisionEncoder()
+
+        out_file = extract_document_to_markdown(
+            file_path,
+            topology_analyzer=topology_analyzer,
+            vision_extractor=extractor,
+            spatial_compiler=spatial_compiler,
+            vision_encoder=vision_encoder,
+            output_dir=output_dir
+        )
         console.print(f"\n[bold green]Success![/bold green] AST flushed to: [cyan]{out_file}[/cyan]")
     except Exception as e:
         console.print(f"[bold red]Fatal Error:[/bold red] {str(e)}")

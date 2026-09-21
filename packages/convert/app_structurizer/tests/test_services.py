@@ -1,26 +1,39 @@
-"""
-Validation suite for the Application Service orchestration layer.
-"""
-
 from pathlib import Path
+import pytest
 from src.services.extraction import extract_document_to_markdown
-from src.domain.ports import VisionExtractor
+from src.domain.ports import VisionExtractor, SpatialCompiler, VisionEncoder
+from src.domain.services.topology import PdfTopologyAnalyzer
+
+class MockTopologyAnalyzer(PdfTopologyAnalyzer):
+    def __init__(self, q_factor: float):
+        self._q_factor = q_factor
+    def analyze(self, document) -> float:
+        return self._q_factor
+
+class MockSpatialCompiler(SpatialCompiler):
+    def compile_graph(self, nodes) -> "MarkdownAST":
+        from src.domain.models import MarkdownAST
+        return MarkdownAST(content="# Simulated Chapter from SpatialCompiler", metadata={})
+
+class MockVisionEncoder(VisionEncoder):
+    def encode_tensor(self, image_bytes: bytes) -> str:
+        return "[ALT Text] Mock image"
 
 def test_extract_document_to_markdown_io_piping(
     fake_extractor: VisionExtractor,
     degraded_raster_book_path: Path,
     tmp_path: Path
 ) -> None:
-    """
-    Validates that the service deterministically pipes the file buffer through 
-    the domain port and successfully flushes the UTF-8 string to disk.
-    
-    Note: `tmp_path` is a native pytest fixture that allocates a temporary 
-    directory in the OS temp folder, ensuring isolation between test runs.
-    """
+    topology_analyzer = MockTopologyAnalyzer(q_factor=0.1) # Force VLM branch
+    spatial_compiler = MockSpatialCompiler()
+    vision_encoder = MockVisionEncoder()
+
     out_path = extract_document_to_markdown(
         file_path=degraded_raster_book_path,
-        extractor=fake_extractor,
+        topology_analyzer=topology_analyzer,
+        vision_extractor=fake_extractor,
+        spatial_compiler=spatial_compiler,
+        vision_encoder=vision_encoder,
         output_dir=tmp_path
     )
     

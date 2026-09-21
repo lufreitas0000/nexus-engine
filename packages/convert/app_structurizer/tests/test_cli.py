@@ -18,6 +18,8 @@ def test_cli_extract_with_fake(degraded_raster_book_path: Path, tmp_path: Path) 
     
     expected_out_file = tmp_path / f"{degraded_raster_book_path.stem}.md"
     assert expected_out_file.exists()
+    content = expected_out_file.read_text(encoding="utf-8")
+    assert "Mocked extraction" in content
 
 def test_cli_fails_gracefully_on_missing_file(tmp_path: Path) -> None:
     result = runner.invoke(app, [
