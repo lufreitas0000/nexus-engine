@@ -46,3 +46,22 @@ Contains shared logic used by all modules, such as settings and basic utility fu
 1. **Prepare Environment**: Create a virtual environment and install the requirements.
 2. **Start Database**: Use `docker-compose up -d` to start the local database.
 3. **Run**: Start a search via the `research_graph` module.
+
+## Roadmap
+
+### What has been done:
+- **Project Architecture:** The high-level module structure has been established, dividing the system into four main domains: `research_graph`, `ingestion_engine`, `document_processor`, and `document_converter`.
+- **Domain Modeling & Specification:** Detailed technical specifications for the `research_graph` have been written.
+- **Environment Setup:** Python dependencies have been defined.
+- **Orchestration & API Layer:** A pipeline controller has been built to connect the four modules seamlessly. A REST API (`FastAPI`) has been implemented to allow users to submit topics and retrieve Markdown notes. Task queues have been implemented to manage background processing without blocking the API.
+- **Production Readiness & Deployment:** Docker configuration (`Dockerfile` and `docker-compose.yml`) has been set up to make the software deploy-ready alongside PostgreSQL. Application configuration is centralized using `pydantic-settings`. Basic logging (`structlog`) has been added.
+
+### What needs to be done:
+- **Implementation:** The actual Python code for the domain logic, adapters, and infrastructure needs to be completely fleshed out and written.
+- **Specification for Remaining Modules:** `ingestion_engine`, `document_processor`, and `document_converter` still need detailed technical specifications similar to the `research_graph`.
+- **Graph Logic & Data Store Integration:** Implement the adjacency matrix and Eigenvector Centrality ranking algorithm, and store results via PostgreSQL (`SQLAlchemy`/`asyncpg`).
+- **Strict Rate Limiting:** Implement strict rate limiting and backoff/retry mechanisms to comply with arXiv's terms of service and avoid IP bans.
+- **Document Processing Pipeline:** Implement archive extraction (zip/tar), conversion hierarchy (source zip, fallback to HTML, fallback to PDF via `spliter`), math formula preservation, and metadata enrichment.
+- **CI/CD & Observability:** Implement CI/CD pipelines (e.g. GitHub Actions), advanced error metrics, and further production observability.
+
+For the full detailed roadmap and past phases, see [ROADMAP.md](ROADMAP.md).
