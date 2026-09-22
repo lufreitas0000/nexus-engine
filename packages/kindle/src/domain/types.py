@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class TargetHardwareConstraints:
     width: int = 1264

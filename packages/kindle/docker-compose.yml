@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  kindle-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kindle-pipeline:latest
+    container_name: kindle-pipeline
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
