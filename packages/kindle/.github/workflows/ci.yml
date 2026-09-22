@@ -31,6 +31,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Lint Code with Flake8
+        run: flake8 src tests main.py
+
+      - name: Check Formatting with Black
+        run: black --check src tests main.py
+
       - name: Run Unit Tests
         env:
           PYTHONPATH: .

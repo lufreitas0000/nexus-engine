@@ -7,7 +7,7 @@ KINDLE_MODELS = {
         dpi=300,
         margin_crop="0.3",
         downrate="0.5",
-        bits_per_channel="2"
+        bits_per_channel="2",
     ),
     "Paperwhite": TargetHardwareConstraints(
         width=1236,
@@ -15,7 +15,15 @@ KINDLE_MODELS = {
         dpi=300,
         margin_crop="0.2",
         downrate="0.5",
-        bits_per_channel="2"
+        bits_per_channel="2",
+    ),
+    "Paperwhite_Signature_Edition": TargetHardwareConstraints(
+        width=1236,
+        height=1648,
+        dpi=300,
+        margin_crop="0.15",
+        downrate="0.5",
+        bits_per_channel="2",
     ),
     "Scribe": TargetHardwareConstraints(
         width=1860,
@@ -23,7 +31,23 @@ KINDLE_MODELS = {
         dpi=300,
         margin_crop="0.1",
         downrate="0.5",
-        bits_per_channel="2"
+        bits_per_channel="2",
+    ),
+    "Voyage": TargetHardwareConstraints(
+        width=1072,
+        height=1448,
+        dpi=300,
+        margin_crop="0.2",
+        downrate="0.5",
+        bits_per_channel="2",
+    ),
+    "Kindle_11th_Gen": TargetHardwareConstraints(
+        width=1080,
+        height=1440,
+        dpi=300,
+        margin_crop="0.2",
+        downrate="0.5",
+        bits_per_channel="2",
     ),
     "Basic": TargetHardwareConstraints(
         width=1072,
@@ -31,6 +55,6 @@ KINDLE_MODELS = {
         dpi=300,
         margin_crop="0.4",
         downrate="0.5",
-        bits_per_channel="2"
-    )
+        bits_per_channel="2",
+    ),
 }
