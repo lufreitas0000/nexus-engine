@@ -7,7 +7,9 @@ This system automates the process of finding, downloading, and converting scient
 1. **Search & Rank**: You provide a topic. The system finds related papers and uses citation data to rank them by importance.
 2. **Download**: The system safely downloads the source files (LaTeX) or PDFs of the top-ranked papers.
 3. **Extract**: It opens the downloaded archives and identifies the main document.
-4. **Convert**: It transforms the complex LaTeX or PDF content into a clean Markdown file, keeping math equations intact but replacing images with compressed ones.
+4. **Convert**: It converts the source files into a clean Markdown file. It first prioritizes processing the source zip file containing the raw LaTeX (`.tex`) files and images. If the source is unavailable, it falls back to extracting the HTML version or the PDF.
+   - **PDF Fallback:** For converting PDFs to Markdown, it integrates [spliter](https://github.com/lufreitas0000/spliter) as a black-box service to process unstructured PDFs into a structured Markdown AST.
+   - **Metadata Header:** The final Markdown output will include a YAML frontmatter header containing the paper's metadata.
 
 ## Folder Structure Guide
 
@@ -32,9 +34,10 @@ This is the file manager.
 
 ### /document_converter
 This is the translator.
-- It takes the scientific paper format and turns it into Markdown.
-- It ensures math formulas are preserved.
-- It extracts figure captions so that your notes contain the context of the images even if the images themselves are removed.
+- It takes the scientific paper format and turns it into Markdown, appending a YAML frontmatter header with the paper's metadata.
+- It prioritizes raw LaTeX source files, gracefully falling back to HTML or PDF.
+- For PDFs, it integrates the external `spliter` tool as a black-box converter.
+- It ensures math formulas are preserved and extracts figure captions so that your notes contain the context of the images even if the images themselves are removed.
 
 ### /common
 Contains shared logic used by all modules, such as settings and basic utility functions.

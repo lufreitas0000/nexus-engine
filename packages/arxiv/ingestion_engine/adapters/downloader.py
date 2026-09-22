@@ -9,6 +9,8 @@ from ingestion_engine.domain.model import DownloadTask
 
 logger = get_logger(__name__)
 
+from ingestion_engine.domain.model import DownloadTask
+
 class ArxivDownloader:
     def __init__(self, client: httpx.AsyncClient, rate_limit_delay: float = 3.0):
         self.client = client
@@ -47,6 +49,9 @@ class ArxivDownloader:
 
             except Exception as e:
                 logger.error("download_error", arxiv_id=arxiv_id, error=str(e))
+                return DownloadTask(arxiv_id=arxiv_id, download_dir=download_dir, file_path=str(file_path), success=True)
+
+            except Exception as e:
                 return DownloadTask(arxiv_id=arxiv_id, download_dir=download_dir, success=False, error=str(e))
 
     async def _fetch_with_retries(self, url: str, max_retries: int = 3) -> httpx.Response:
