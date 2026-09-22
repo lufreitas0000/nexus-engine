@@ -4,6 +4,11 @@ import httpx
 from typing import Optional
 from pathlib import Path
 
+from common.logging import get_logger
+from ingestion_engine.domain.model import DownloadTask
+
+logger = get_logger(__name__)
+
 from ingestion_engine.domain.model import DownloadTask
 
 class ArxivDownloader:
@@ -15,6 +20,7 @@ class ArxivDownloader:
     async def download_paper(self, arxiv_id: str, download_dir: str) -> DownloadTask:
         async with self.semaphore:
             # Enforce delay between requests
+            logger.info("enforcing_rate_limit", arxiv_id=arxiv_id, delay=self.rate_limit_delay)
             await asyncio.sleep(self.rate_limit_delay)
 
             try:
@@ -38,6 +44,11 @@ class ArxivDownloader:
                 with open(file_path, "wb") as f:
                     f.write(response.content)
 
+                logger.info("download_success", arxiv_id=arxiv_id, file_path=str(file_path))
+                return DownloadTask(arxiv_id=arxiv_id, download_dir=download_dir, file_path=str(file_path), success=True)
+
+            except Exception as e:
+                logger.error("download_error", arxiv_id=arxiv_id, error=str(e))
                 return DownloadTask(arxiv_id=arxiv_id, download_dir=download_dir, file_path=str(file_path), success=True)
 
             except Exception as e:
@@ -48,8 +59,11 @@ class ArxivDownloader:
             response = await self.client.get(url, follow_redirects=True)
             if response.status_code in [429, 500, 502, 503, 504]:
                 wait_time = 2 ** attempt
+                logger.warning("retry_request", url=url, attempt=attempt, wait_time=wait_time, status_code=response.status_code)
                 await asyncio.sleep(wait_time)
                 continue
             response.raise_for_status()
             return response
+
+        logger.error("max_retries_exceeded", url=url, max_retries=max_retries)
         raise Exception(f"Failed to fetch {url} after {max_retries} attempts.")

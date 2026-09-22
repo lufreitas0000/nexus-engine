@@ -3,11 +3,17 @@ import httpx
 import argparse
 import os
 
+from common.logging import setup_logging, get_logger
 from research_graph.adapters.external_apis import ArxivAdapter
 from ingestion_engine.adapters.downloader import ArxivDownloader
 from document_processor.adapters.processor import ArchiveProcessor
 from document_converter.adapters.converter import LatexToMarkdownConverter
 
+logger = get_logger(__name__)
+
+async def run_pipeline(query: str, max_results: int, output_dir: str):
+    setup_logging()
+    logger.info("pipeline_started", query=query, max_results=max_results)
 async def run_pipeline(query: str, max_results: int, output_dir: str):
     print(f"Starting pipeline for query: '{query}'")
 
@@ -19,6 +25,26 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
         converter = LatexToMarkdownConverter()
 
         # 1. Search
+        logger.info("searching_arxiv", query=query)
+        papers = await arxiv_adapter.search_by_query(query, max_results)
+
+        if not papers:
+            logger.info("no_papers_found")
+            return
+
+        logger.info("papers_found", count=len(papers))
+
+        # We process them sequentially in this simple CLI, but downloader has a semaphore
+        for paper in papers:
+            logger.info("processing_paper", arxiv_id=paper.arxiv_id, title=paper.title)
+
+            # 2. Download
+            download_dir = os.path.join(output_dir, "downloads")
+            logger.info("downloading_paper", arxiv_id=paper.arxiv_id)
+            dl_task = await downloader.download_paper(paper.arxiv_id, download_dir)
+
+            if not dl_task.success or not dl_task.file_path:
+                logger.error("download_failed", arxiv_id=paper.arxiv_id, error=dl_task.error)
         print(f"Searching arXiv for top {max_results} results...")
         papers = await arxiv_adapter.search_by_query(query, max_results)
 
@@ -43,6 +69,11 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
 
             # 3. Process/Extract
             extract_dir = os.path.join(output_dir, "extracted", paper.arxiv_id)
+            logger.info("extracting_archive", arxiv_id=paper.arxiv_id)
+            proc_doc = processor.process_archive(paper.arxiv_id, dl_task.file_path, extract_dir)
+
+            if not proc_doc.success or not proc_doc.main_file_path:
+                logger.error("processing_failed", arxiv_id=paper.arxiv_id, error=proc_doc.error)
             print("  Extracting...")
             proc_doc = processor.process_archive(paper.arxiv_id, dl_task.file_path, extract_dir)
 
@@ -52,6 +83,14 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
 
             # 4. Convert
             markdown_dir = os.path.join(output_dir, "markdown")
+            logger.info("converting_to_markdown", arxiv_id=paper.arxiv_id)
+            conv_doc = converter.convert(paper.arxiv_id, proc_doc.main_file_path, markdown_dir)
+
+            if not conv_doc.success:
+                logger.error("conversion_failed", arxiv_id=paper.arxiv_id, error=conv_doc.error)
+                continue
+
+            logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.markdown_path)
             print("  Converting to Markdown...")
             conv_doc = converter.convert(paper.arxiv_id, proc_doc.main_file_path, markdown_dir)
 
