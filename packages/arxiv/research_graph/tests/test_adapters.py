@@ -34,7 +34,7 @@ async def test_arxiv_adapter():
         adapter = ArxivAdapter(client)
 
         with respx.mock(assert_all_called=False) as respx_mock:
-            respx_mock.get("http://export.arxiv.org/api/query?search_query=all:electron&max_results=1").mock(return_value=httpx.Response(200, text=ARXIV_XML_MOCK))
+            respx_mock.get("https://export.arxiv.org/api/query?search_query=all:electron&max_results=1").mock(return_value=httpx.Response(200, text=ARXIV_XML_MOCK))
 
             papers = await adapter.search_by_query("all:electron", 1)
 

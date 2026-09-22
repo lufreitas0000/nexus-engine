@@ -84,7 +84,7 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
             # 4. Convert
             markdown_dir = os.path.join(output_dir, "markdown")
             logger.info("converting_to_markdown", arxiv_id=paper.arxiv_id)
-            conv_doc = converter.convert(paper.arxiv_id, proc_doc.main_file_path, markdown_dir)
+            conv_doc = converter.convert(paper, proc_doc.main_file_path, markdown_dir)
 
             if not conv_doc.success:
                 logger.error("conversion_failed", arxiv_id=paper.arxiv_id, error=conv_doc.error)
@@ -92,7 +92,7 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
 
             logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.markdown_path)
             print("  Converting to Markdown...")
-            conv_doc = converter.convert(paper.arxiv_id, proc_doc.main_file_path, markdown_dir)
+            conv_doc = converter.convert(paper, proc_doc.main_file_path, markdown_dir)
 
             if not conv_doc.success:
                 print(f"  [Error] Failed to convert: {conv_doc.error}")
