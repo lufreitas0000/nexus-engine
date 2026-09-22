@@ -82,4 +82,3 @@ typing-inspection==0.4.2
     #   pydantic
     #   pydantic-settings
 
-types-pytest
