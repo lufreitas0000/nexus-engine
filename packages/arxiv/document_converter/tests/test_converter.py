@@ -3,10 +3,18 @@ import os
 import tempfile
 
 from document_converter.adapters.converter import LatexToMarkdownConverter
+from research_graph.domain.model import PaperMetadata
 
 def test_latex_conversion():
     converter = LatexToMarkdownConverter()
     arxiv_id = "1234"
+    paper = PaperMetadata(
+        arxiv_id=arxiv_id,
+        title="Test Paper",
+        abstract="Test Abstract",
+        published_date="20240101",
+        authors=["Alice", "Bob"]
+    )
 
     latex_content = r"""
 \section{Introduction}
@@ -30,7 +38,7 @@ E = mc^2
 
         output_dir = os.path.join(tempdir, "output")
 
-        result = converter.convert(arxiv_id, tex_path, output_dir)
+        result = converter.convert(paper, tex_path, output_dir)
 
         assert result.success is True
         assert result.markdown_path is not None

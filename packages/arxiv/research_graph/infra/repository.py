@@ -55,3 +55,13 @@ class PostgresGraphRepository(GraphRepository):
             except Exception:
                 # ignore integrity errors if nodes don't exist yet in this simplified setup
                 pass
+
+    async def get_edges(self, arxiv_ids: list[str]) -> list[tuple[str, str]]:
+        from sqlalchemy import select
+
+        stmt = select(citation_table).where(
+            citation_table.c.referrer_id.in_(arxiv_ids) | citation_table.c.referee_id.in_(arxiv_ids)
+        )
+
+        result = await self.session.execute(stmt)
+        return [(row.referrer_id, row.referee_id) for row in result.fetchall()]
