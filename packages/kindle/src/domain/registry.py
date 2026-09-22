@@ -1,4 +1,4 @@
-from src.optimizer.domain.types import TargetHardwareConstraints
+from src.domain.types import TargetHardwareConstraints
 
 KINDLE_MODELS = {
     "Oasis": TargetHardwareConstraints(

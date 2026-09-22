@@ -2,16 +2,14 @@ import argparse
 import sys
 import os
 import shutil
+import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
-from pypdf import PdfReader
 
 from src.converter.epub_converter import convert_markdown_to_epub
 from src.dispatcher.config import load_smtp_config
 from src.dispatcher.mailer import dispatch_artifact_to_kindle
-from src.optimizer.domain.types import OptimizerConfig
-from src.optimizer.domain.registry import KINDLE_MODELS
-from src.optimizer.services.orchestrator import optimize_pdf_for_oasis
+from src.domain.registry import KINDLE_MODELS
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Artifact Compilation and Kindle Dispatch Pipeline")
@@ -33,18 +31,19 @@ def main() -> None:
         artifacts_to_dispatch = []
         target_hardware = KINDLE_MODELS[arguments.model]
 
-        if source_path.suffix.lower() == '.md':
+        if source_path.suffix.lower() == '.pdf':
+            sys.stdout.write(f"Initiating PDF to Markdown pipeline via spliter for: {source_path.name}\n")
+
+            # Using spliter to convert PDF to MD
+            from src.converter.spliter_integration import convert_pdf_to_md
+            md_path = convert_pdf_to_md(source_path)
+
+            sys.stdout.write(f"Initiating EPUB compilation pipeline for generated markdown: {md_path.name} (Model: {arguments.model})\n")
+            artifacts_to_dispatch.append(convert_markdown_to_epub(md_path, hardware_constraints=target_hardware))
+
+        elif source_path.suffix.lower() == '.md':
             sys.stdout.write(f"Initiating EPUB compilation pipeline for: {source_path.name} (Model: {arguments.model})\n")
             artifacts_to_dispatch.append(convert_markdown_to_epub(source_path, hardware_constraints=target_hardware))
-            
-        elif source_path.suffix.lower() == '.pdf':
-            sys.stdout.write(f"Initiating PDF optimization pipeline for: {source_path.name} (Model: {arguments.model})\n")
-            opt_config = OptimizerConfig(
-                binary_path=os.getenv('K2PDFOPT_PATH', 'k2pdfopt'),
-                hardware=target_hardware
-            )
-            # The orchestrator now returns a list of artifacts (handling dynamic splits)
-            artifacts_to_dispatch.extend(optimize_pdf_for_oasis(source_path, opt_config))
             
         else:
             sys.exit(f"Fatal: Unsupported file extension {source_path.suffix}.")
@@ -58,8 +57,7 @@ def main() -> None:
             archived_paths.append(archived_path)
             
             size_mb = archived_path.stat().st_size / (1024 * 1024)
-            pages = len(PdfReader(archived_path).pages) if archived_path.suffix.lower() == '.pdf' else "N/A"
-            sys.stdout.write(f"- File:  {archived_path.name} | Pages: {pages} | Size: {size_mb:.2f} MB\n")
+            sys.stdout.write(f"- File:  {archived_path.name} | Size: {size_mb:.2f} MB\n")
 
         # Interactive Gate
         user_intent = input(f"\nDispatch to {config.destination}? [y/N]: ").strip().lower()

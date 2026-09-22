@@ -1,0 +1,3 @@
+[submodule "external/spliter"]
+	path = external/spliter
+	url = https://github.com/lufreitas0000/spliter
