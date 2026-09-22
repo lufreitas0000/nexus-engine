@@ -42,10 +42,13 @@ To reach a deploy-ready state, the software development will follow a phased app
 - [ ] **Storage Adapter:** Create a robust local file or object storage adapter to save downloaded raw archives.
 
 ### Phase 3: Processing & Conversion Pipeline (Weeks 4-5)
-*Goal: Extract raw files and convert LaTeX/PDF to Markdown.*
+*Goal: Extract raw files and convert LaTeX/HTML/PDF to Markdown.*
 - [ ] **Specification:** Draft `doc_document_processor.md` and `doc_document_converter.md`.
 - [ ] **Document Processor:** Implement archive extraction (zip/tar) and heuristic detection of the "main" LaTeX file (e.g., looking for `\begin{document}`).
-- [ ] **Document Converter:** Build the translation engine. Parse LaTeX to extract sections, preserve mathematical formulas natively (MathJax/KaTeX compatible), and extract figure placeholders with their captions.
+- [ ] **Conversion Strategy:** Implement a fallback hierarchy for conversion: prioritize source zip (raw `.tex` and images), fallback to HTML, and finally fallback to PDF.
+- [ ] **Document Converter (LaTeX/HTML):** Build the translation engine. Parse LaTeX/HTML to extract sections, preserve mathematical formulas natively (MathJax/KaTeX compatible), and extract figure placeholders with their captions.
+- [ ] **Document Converter (PDF Fallback):** Integrate [spliter](https://github.com/lufreitas0000/spliter) as a black-box service to handle complex, unstructured PDF-to-Markdown conversions.
+- [ ] **Metadata Enrichment:** Ensure the final Markdown output includes a YAML frontmatter header populated with the paper's metadata.
 - [ ] **Image Optimization:** Implement an image compression utility for extracted figures.
 
 ### Phase 4: Orchestration & API Layer (Week 6)
