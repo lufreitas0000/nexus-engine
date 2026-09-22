@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from src.optimizer.domain.types import TargetHardwareConstraints
+from src.domain.types import TargetHardwareConstraints
 
 def convert_markdown_to_epub(input_path: Path | str, output_path: Path | str | None = None, hardware_constraints: TargetHardwareConstraints | None = None) -> Path:
     input_file = Path(input_path).resolve()
