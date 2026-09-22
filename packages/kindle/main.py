@@ -9,13 +9,15 @@ from pypdf import PdfReader
 from src.converter.epub_converter import convert_markdown_to_epub
 from src.dispatcher.config import load_smtp_config
 from src.dispatcher.mailer import dispatch_artifact_to_kindle
-from src.optimizer.domain.types import OptimizerConfig, TargetHardwareConstraints
+from src.optimizer.domain.types import OptimizerConfig
+from src.optimizer.domain.registry import KINDLE_MODELS
 from src.optimizer.services.orchestrator import optimize_pdf_for_oasis
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Artifact Compilation and Kindle Dispatch Pipeline")
     parser.add_argument("input_file", type=str, help="Target path to the source file (.md or .pdf)")
     parser.add_argument("--keep", action="store_true", help="Deprecated: artifacts are now auto-archived")
+    parser.add_argument("--model", type=str, default="Oasis", choices=list(KINDLE_MODELS.keys()), help="Target Kindle model for optimization.")
     arguments = parser.parse_args()
     
     source_path = Path(arguments.input_file).resolve()
@@ -29,16 +31,17 @@ def main() -> None:
     try:
         config = load_smtp_config()
         artifacts_to_dispatch = []
+        target_hardware = KINDLE_MODELS[arguments.model]
 
         if source_path.suffix.lower() == '.md':
-            sys.stdout.write(f"Initiating EPUB compilation pipeline for: {source_path.name}\n")
-            artifacts_to_dispatch.append(convert_markdown_to_epub(source_path))
+            sys.stdout.write(f"Initiating EPUB compilation pipeline for: {source_path.name} (Model: {arguments.model})\n")
+            artifacts_to_dispatch.append(convert_markdown_to_epub(source_path, hardware_constraints=target_hardware))
             
         elif source_path.suffix.lower() == '.pdf':
-            sys.stdout.write(f"Initiating PDF optimization pipeline for: {source_path.name}\n")
+            sys.stdout.write(f"Initiating PDF optimization pipeline for: {source_path.name} (Model: {arguments.model})\n")
             opt_config = OptimizerConfig(
                 binary_path=os.getenv('K2PDFOPT_PATH', 'k2pdfopt'),
-                hardware=TargetHardwareConstraints()
+                hardware=target_hardware
             )
             # The orchestrator now returns a list of artifacts (handling dynamic splits)
             artifacts_to_dispatch.extend(optimize_pdf_for_oasis(source_path, opt_config))
