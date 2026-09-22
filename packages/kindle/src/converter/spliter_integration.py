@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 from pypdf import PdfReader
 
-
+import tempfile
 def convert_pdf_to_md(pdf_path: Path) -> Path:
     # Use the external spliter submodule to convert a PDF to Markdown.
     spliter_dir = Path("external/spliter").resolve()

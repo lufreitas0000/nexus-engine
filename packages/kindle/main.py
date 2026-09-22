@@ -3,6 +3,7 @@ import sys
 
 import shutil
 
+import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -87,9 +88,7 @@ def main() -> None:
             archived_paths.append(archived_path)
 
             size_mb = archived_path.stat().st_size / (1024 * 1024)
-            sys.stdout.write(
-                f"- File:  {archived_path.name} | Size: {size_mb:.2f} MB\n"
-            )
+            sys.stdout.write(f"- File:  {archived_path.name} | Size: {size_mb:.2f} MB\n")
 
         # Interactive Gate
         user_intent = (
