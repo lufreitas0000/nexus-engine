@@ -15,7 +15,7 @@ class BackgroundQueue:
         self.output_dir = output_dir
         self.pool = None
         self.redis_settings = RedisSettings.from_dsn(self.redis_url)
-        self.sync_redis = redis.Redis.from_url(self.redis_url)
+        self.sync_redis: redis.Redis = redis.Redis.from_url(self.redis_url)
 
     async def add_query(self, query: str, max_results: int = 3):
         if not self.pool:
@@ -40,7 +40,8 @@ class BackgroundQueue:
         Uses a synchronous redis client to count jobs in arq's default queue.
         """
         try:
-            return self.sync_redis.zcard("arq:queue")
+            val = self.sync_redis.zcard("arq:queue")
+            return int(val) if val is not None else 0 # type: ignore
         except Exception as e:
             logger.error("get_queue_size_sync_error", error=str(e))
             return 0
