@@ -17,21 +17,21 @@ def extract_document_to_markdown(
     """
     doc = RawDocument(file_path=file_path, file_size_bytes=file_path.stat().st_size)
     q_factor = topology_analyzer.analyze(doc)
-    
+
     ast: MarkdownAST
-    
+
     if q_factor >= 0.95:
         semantic_image_map = _extract_and_encode_images(doc, vision_encoder)
         nodes = _extract_spatial_graph(doc)
         ast = spatial_compiler.compile_graph(nodes)
     else:
         ast = vision_extractor.extract_ast(doc)
-        
+
     out_dir = Path(output_dir)
     out_path = out_dir / f"{file_path.stem}.md"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path.write_text(ast.content, encoding="utf-8")
-    
+
     return out_path
 
 def _extract_and_encode_images(document: RawDocument, encoder: VisionEncoder) -> dict[str, str]:
@@ -41,17 +41,17 @@ def _extract_and_encode_images(document: RawDocument, encoder: VisionEncoder) ->
         for page_index in range(len(pdf)):
             page = pdf[page_index]
             image_list = page.get_images(full=True)
-            
+
             for img in image_list:
                 xref = img[0]
                 base_image = pdf.extract_image(xref)
                 image_bytes = base_image["image"]
-                
+
                 semantic_string = encoder.encode_tensor(image_bytes)
                 image_semantics[f"xref_{xref}"] = semantic_string
     finally:
         pdf.close()
-        
+
     return image_semantics
 
 def _extract_spatial_graph(document: RawDocument) -> list[SpatialNode]:

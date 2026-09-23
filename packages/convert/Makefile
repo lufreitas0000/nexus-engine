@@ -5,7 +5,7 @@ MYPY   = $(PYTHON) -m mypy
 PIP    = $(PYTHON) -m pip
 
 # Package Resolution
-PACKAGE_ROOT = app_spatial_compiler
+PACKAGE_ROOT = semantic_pdf_splitter
 SRC_DIR = $(PACKAGE_ROOT)/src
 TESTS_DIR = $(PACKAGE_ROOT)/tests
 
@@ -13,19 +13,19 @@ TESTS_DIR = $(PACKAGE_ROOT)/tests
 
 all: lint test
 
-## test: Execute all TDD assertions over synthetic RAM manifolds
+## test: Execute all TDD assertions
 test:
-	@echo "Running synthetic manifold assertions..."
-	export PYTHONPATH=$$(pwd) && $(PYTEST) $(TESTS_DIR) -v
+	@echo "Running tests..."
+	export PYTHONPATH=$$(pwd)/$(PACKAGE_ROOT)/src && cd $(PACKAGE_ROOT) && $(PYTEST) tests -v
 
-## lint: Execute strict static analysis on memory-contiguous structures
+## lint: Execute strict static analysis
 lint:
 	@echo "Executing strict static analysis..."
-	$(MYPY) -p $(PACKAGE_ROOT).src -p $(PACKAGE_ROOT).tests
+	$(MYPY) --config-file $(PACKAGE_ROOT)/mypy.ini -p semantic_pdf_splitter
 
-## install: Synchronize dependencies from requirements.txt
+## install: Synchronize dependencies
 install:
-	$(PIP) install -r $(PACKAGE_ROOT)/requirements.txt
+	$(PIP) install -r requirements.txt
 
 ## clean: Remove __pycache__ and build artifacts
 clean:

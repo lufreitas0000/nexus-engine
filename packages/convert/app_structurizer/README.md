@@ -32,5 +32,5 @@ Here is what we will implement next in this module:
 3. **Application Service / Use Case:** Write the orchestration function that receives a file path, creates a `RawDocument`, passes it to the extractor, and saves the resulting `MarkdownAST` to disk.
 
 ## 5. Infrastructure Adapters (`src/adapters/`)
-This layer contains the concrete implementations of our Interfaces/Ports. 
+This layer contains the concrete implementations of our Interfaces/Ports.
 * **`MarkerVisionAdapter`:** Uses the `marker-pdf` library. It performs **lazy-loading** of the PyTorch neural networks. This means the multi-gigabyte models are not mapped into the physical memory (RAM/VRAM) until the `extract_ast` function is called for the very first time, strictly preserving system resources.

@@ -25,11 +25,11 @@ def _find_maximal_cut(nodes: Sequence[SpatialNode], axis: str) -> tuple[int | No
     for i in range(1, len(sorted_nodes)):
         current_min = get_min(sorted_nodes[i])
         gap = current_min - max_ext
-        
+
         if gap > best_gap:
             best_gap = gap
             cut_idx = i
-            
+
         max_ext = max(max_ext, get_max(sorted_nodes[i]))
 
     return cut_idx, best_gap, sorted_nodes

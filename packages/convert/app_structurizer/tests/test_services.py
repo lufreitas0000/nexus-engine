@@ -36,9 +36,9 @@ def test_extract_document_to_markdown_io_piping(
         vision_encoder=vision_encoder,
         output_dir=tmp_path
     )
-    
+
     assert out_path.exists(), "The output Markdown file was not created on disk."
     assert out_path.suffix == ".md", "The output file lacks the correct topological extension."
-    
+
     content = out_path.read_text(encoding="utf-8")
     assert content.startswith("# Simulated Chapter"), "The AST content was corrupted during I/O flush."

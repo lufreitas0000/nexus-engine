@@ -21,12 +21,12 @@ def test_use_case_delegates_to_spatial_port() -> None:
         SpatialNode(char="D", x0=1.0, y0=0.0, x1=2.0, y1=1.0),
         SpatialNode(char="D", x0=2.0, y0=0.0, x1=3.0, y1=1.0)
     ]
-    
+
     port = FakeSpatialCompiler()
     use_case = CompileDocumentUseCase(spatial_compiler=port)
-    
+
     ast = use_case.execute(synthetic_nodes)
-    
+
     assert isinstance(ast, MarkdownAST)
     assert ast.content == "orchestrated_output"
     assert ast.metadata["nodes_processed"] == "3"

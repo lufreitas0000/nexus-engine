@@ -33,7 +33,7 @@ def test_fake_encoder_satisfies_protocol(
     physical_image: PhysicalImageReference
 ) -> None:
     ast_node = fake_encoder.encode_manifold(physical_image)
-    
+
     assert isinstance(ast_node, SemanticDescription)
     assert ast_node.content.startswith("Semantic description of tensor")
     assert ast_node.metadata["engine"] == "FakeAdapter"

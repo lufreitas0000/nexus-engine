@@ -15,7 +15,7 @@ def test_cli_encode_with_fake_adapter(synthetic_image_tensor: Path) -> None:
         str(synthetic_image_tensor),
         "--use-fake"
     ])
-    
+
     assert result.exit_code == 0
     assert "Injecting deterministic FakeVisionEncoderAdapter" in result.stdout
     assert "Semantic description of tensor at" in result.stdout
@@ -25,6 +25,6 @@ def test_cli_fails_gracefully_on_missing_tensor() -> None:
     result = runner.invoke(app, [
         "nonexistent_tensor_artifact.png"
     ])
-    
+
     assert result.exit_code == 1
     assert "Fatal Error: Tensor artifact not found" in result.stdout

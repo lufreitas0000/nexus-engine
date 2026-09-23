@@ -25,18 +25,18 @@ def degraded_raster_book_path() -> Path:
 
     final_doc = fitz.open()
     temp_doc = fitz.open()
-    
+
     for i in range(50):
         temp_page = temp_doc.new_page()
         temp_page.insert_text(fitz.Point(50, 50), f"Chapter {i}", fontsize=24)
         temp_page.insert_text(fitz.Point(50, 100), "Degraded raster text payload.", fontsize=12)
-        
+
         pix = temp_page.get_pixmap(dpi=72)
-        img_bytes = pix.tobytes("jpeg", jpg_quality=10) 
-        
+        img_bytes = pix.tobytes("jpeg", jpg_quality=10)
+
         final_page = final_doc.new_page(width=pix.width, height=pix.height)
         final_page.insert_image(final_page.rect, stream=img_bytes)
-        
+
     final_doc.save(str(out_path))
     temp_doc.close()
     final_doc.close()

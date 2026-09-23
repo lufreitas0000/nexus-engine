@@ -14,16 +14,16 @@ def build_line(text: str, x: float, y: float, size: float = 12.0) -> list[dict]:
 
 def test_integrated_academic_document() -> None:
     manifold = []
-    
+
     # Page 1: Margin content (Header) and Title
     manifold += build_line("COPYRIGHT 2026 - IGNORE ME", 100, 20, size=8.0) # Should be filtered
     manifold += build_line("1. Theoretical Foundation", 50, 100, size=18.0)
     manifold += build_line(r"The mapping $f: \mathbb{R}^2 \to \text{AST}$ is discrete.", 50, 150)
-    
+
     # Page 2: Two-Column Text (Corrected X-spacing) and Einstein
     manifold += build_line("Column Left: Segment A.", 50, 1100)
     manifold += build_line("Column Right: Segment B.", 400, 1100) # Increased X to 400
-    
+
     # Einstein: E = mc^2
     manifold += [
         {"char": "E", "x0": 200, "y0": 1300, "x1": 210, "y1": 1315, "font_size": 15.0},
@@ -34,7 +34,7 @@ def test_integrated_academic_document() -> None:
     ]
 
     result = runner.invoke(app, [json.dumps(manifold)])
-    
+
     assert result.exit_code == 0
     # Assert header was ignored
     assert "COPYRIGHT" not in result.stdout

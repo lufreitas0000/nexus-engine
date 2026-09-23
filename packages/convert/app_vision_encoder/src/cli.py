@@ -39,7 +39,7 @@ def encode(
         if not api_key:
             console.print("[bold red]Fatal Error:[/bold red] OPENAI_API_KEY environment variable undefined.")
             raise typer.Exit(code=1)
-        
+
         from src.adapters.external_api import ExternalAPIAdapter
         encoder = ExternalAPIAdapter(api_key=api_key)
     else:
@@ -51,7 +51,7 @@ def encode(
     try:
         console.print(r"[dim]Executing mapping f: R^{H x W x C} -> \Sigma^* ...[/dim]")
         ast_node = generate_semantic_ast_node(image_path=image_path, encoder=encoder)
-        
+
         console.print(r"\n[bold green]Discrete \Sigma^* Output:[/bold green]")
         console.print(ast_node.content)
         console.print(f"\n[dim]Metadata Trace: {ast_node.metadata}[/dim]")

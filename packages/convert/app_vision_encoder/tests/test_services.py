@@ -9,5 +9,5 @@ def test_generate_semantic_ast_node_orchestration(tmp_path: Path):
     adapter = FakeVisionEncoderAdapter()
 
     result = generate_semantic_ast_node(file_path, adapter)
-    
+
     assert "Fake deterministic extraction for diagram.png" in result.content

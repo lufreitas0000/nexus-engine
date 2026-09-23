@@ -6,16 +6,16 @@ runner = CliRunner()
 
 def test_cli_extract_with_fake(degraded_raster_book_path: Path, tmp_path: Path) -> None:
     result = runner.invoke(app, [
-        "extract", 
-        str(degraded_raster_book_path), 
+        "extract",
+        str(degraded_raster_book_path),
         "--output-dir", str(tmp_path),
         "--use-fake"
     ])
-    
+
     assert result.exit_code == 0
     assert "Using deterministic FakeVisionExtractor" in result.stdout
     assert "Success!" in result.stdout
-    
+
     expected_out_file = tmp_path / f"{degraded_raster_book_path.stem}.md"
     assert expected_out_file.exists()
     content = expected_out_file.read_text(encoding="utf-8")

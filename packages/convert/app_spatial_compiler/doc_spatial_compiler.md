@@ -237,7 +237,7 @@ We introduce a decoupling between the **Topological Sort** and the **String Repr
 ### 9.3 Metadata Extraction: The Font Descriptor
 To detect headers and emphasis, the `PDFExtractorAdapter` must capture the font-weight $\omega$. We define a weight-mapping function:
 $$f(\text{font\_name}) \to \{\text{Normal, Bold, Italic, Math}\}$$
-Headers are identified by the ratio $R = \frac{s_{block}}{s_{median}}$, where $s$ is font size. 
+Headers are identified by the ratio $R = \frac{s_{block}}{s_{median}}$, where $s$ is font size.
 * $R > 1.4 \implies \#$ (H1)
 * $1.2 < R \le 1.4 \implies \#\#$ (H2)
 

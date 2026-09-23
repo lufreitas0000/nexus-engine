@@ -3,7 +3,7 @@ from app_spatial_compiler.src.domain.ports import EquationFallbackPort
 
 class VisionEncoderAdapter(EquationFallbackPort):
     """
-    Adapter for external VLM delegation. 
+    Adapter for external VLM delegation.
     Simulates the transformation of Euclidean voids into LaTeX/Markdown descriptions.
     """
     def resolve_subgraph(self, bounds: tuple[float, float, float, float]) -> str:

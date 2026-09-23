@@ -7,9 +7,9 @@ def test_vision_adapter_resolves_complex_manifold() -> None:
     """
     adapter = VisionEncoderAdapter()
     bounds = (10.0, 50.0, 100.0, 150.0) # (x0, y0, x1, y1)
-    
+
     result = adapter.resolve_subgraph(bounds)
-    
+
     assert isinstance(result, str)
     # Align assertion with the actual LaTeX figure environment return state
     assert "\\begin{figure}" in result

@@ -4,7 +4,7 @@ from app_spatial_compiler.src.domain.ports import SpatialCompilerPort
 
 class CompileDocumentUseCase:
     """
-    Orchestrates the transformation of a 2D Euclidean manifold into a 
+    Orchestrates the transformation of a 2D Euclidean manifold into a
     1D syntactic tree by delegating pure mathematical operations to the Domain boundary.
     """
     def __init__(self, spatial_compiler: SpatialCompilerPort):

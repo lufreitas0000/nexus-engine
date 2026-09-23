@@ -134,19 +134,19 @@ Testing machine learning applications presents a fundamental contradiction: unit
 If our continuous integration (CI/CD) pipeline required allocating a 4-bit LLaVA model into VRAM simply to test our domain logic, the test suite would become intractable. To resolve this, our testing strategy strictly relies on **synthetic tensors** and **deterministic test doubles**.
 
 ### 7.1 Synthetic Tensor Generation
-We must test the `PhysicalImageReference` state validation without bloating our Git repository with binary Large File Storage (LFS) image files. 
+We must test the `PhysicalImageReference` state validation without bloating our Git repository with binary Large File Storage (LFS) image files.
 
 During the `pytest` session initialization, we utilize the `PIL` (Pillow) library to mathematically synthesize a minimal continuous manifold—a uniform $\mathbb{R}^{100 \times 100 \times 3}$ RGB matrix—in system RAM. We flush this synthetic tensor to a temporary OS directory. This provides a valid physical pointer for the Domain to evaluate, executing in microseconds and ensuring our repository remains strictly text-based.
 
 ### 7.2 The Deterministic Fake (Test Double)
-To test the orchestration and integration boundaries, we implement the `FakeVisionEncoderAdapter`. 
+To test the orchestration and integration boundaries, we implement the `FakeVisionEncoderAdapter`.
 
-This object acts as an exact structural subtype of the `VisionEncoderPort`. However, instead of executing a self-attention forward pass or opening a blocking HTTP socket, it intercepts the `PhysicalImageReference` and instantaneously returns a hardcoded `SemanticDescription`. 
+This object acts as an exact structural subtype of the `VisionEncoderPort`. However, instead of executing a self-attention forward pass or opening a blocking HTTP socket, it intercepts the `PhysicalImageReference` and instantaneously returns a hardcoded `SemanticDescription`.
 
 By injecting this Fake into our Application Service during testing, we mathematically prove that the data routing, memory pipelining, and AST injection logic are sound. If the orchestration successfully pipes the data through the Fake, it is guaranteed to pipe the data through the PyTorch or external API adapters in production, provided they strictly adhere to the Protocol.
 
 ### 7.3 Isolated Hardware Verification
-The actual infrastructure adapters (`LocalQuantizedAdapter` and `ExternalAPIAdapter`) are excluded from the standard unit test suite. They are isolated using `pytest` markers (e.g., `@pytest.mark.gpu` or `@pytest.mark.network`). 
+The actual infrastructure adapters (`LocalQuantizedAdapter` and `ExternalAPIAdapter`) are excluded from the standard unit test suite. They are isolated using `pytest` markers (e.g., `@pytest.mark.gpu` or `@pytest.mark.network`).
 
 These tests are executed selectively in controlled environments. For the local adapter, we assert that the CUDA context is successfully initialized and that the model's perplexity on a known ground-truth tensor falls within acceptable statistical bounds. For the external adapter, we mock the HTTP response using libraries like `responses` or `httpx-mock` to verify the deterministic parsing of the JSON payload without incurring API billing costs.
 
@@ -201,9 +201,9 @@ A rigorous system minimizes its dependency graph. Each external library must be 
 * **`httpx`:** Replaces the legacy `requests` library. It provides strict timeout enforcing and modern HTTP/2 connection pooling. While we currently use its synchronous (blocking) API, `httpx` allows a trivial migration to `asyncio` non-blocking sockets when we parallelize the AST extraction.
 
 ### A.3 Type Hinting Rigor: `typing` vs `collections.abc` in Python 3.12
-In Python 3.12, the type system adheres to PEP 585 (Type Hinting Generics In Standard Collections). 
+In Python 3.12, the type system adheres to PEP 585 (Type Hinting Generics In Standard Collections).
 
-Previously, engineers imported `List`, `Dict`, and `Set` from the `typing` module to construct generic types. In Python 3.12, this is obsolete. The standard C-level object primitives themselves now support generic indexing (e.g., `dict[str, str]`). 
+Previously, engineers imported `List`, `Dict`, and `Set` from the `typing` module to construct generic types. In Python 3.12, this is obsolete. The standard C-level object primitives themselves now support generic indexing (e.g., `dict[str, str]`).
 
 Furthermore, abstract base classes representing behaviors should be sourced from `collections.abc` (e.g., `collections.abc.Sequence`, `collections.abc.Mapping`, `collections.abc.Callable`) rather than `typing`.
 

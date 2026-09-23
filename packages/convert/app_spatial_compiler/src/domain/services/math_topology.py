@@ -16,7 +16,7 @@ class MathTopologyResolver:
     def resolve_manifold(self, nodes: Sequence[SpatialNode]) -> str:
         if not nodes: return ""
         ref_h = self._get_ref_height(nodes)
-        
+
         # 1. Fraction Resolution
         fraction_lines = [n for n in nodes if n.char == "-" and n.width > ref_h * 0.4]
         if fraction_lines:
@@ -34,7 +34,7 @@ class MathTopologyResolver:
 
         for node in sorted_nodes:
             if id(node) in processed: continue
-            
+
             # Adjacency query
             neighbors = tree.query_knn(node, k=5)
             buffer += self._to_latex(node.char)
@@ -47,7 +47,7 @@ class MathTopologyResolver:
                 if id(n) in processed: continue
                 # Tighten contiguity for superscripts
                 if (n.x0 - node.x1) > ref_h * 0.4: continue
-                
+
                 # Use centroid-based elevation for more robust sub/super detection
                 if n.centroid[1] < node.y0 + (ref_h * 0.2):
                     right_super.append(n)
@@ -60,5 +60,5 @@ class MathTopologyResolver:
             if right_sub:
                 buffer += f"_{{{''.join(self._to_latex(n.char) for n in sorted(right_sub, key=lambda n: n.x0))}}}"
                 for n in right_sub: processed.add(id(n))
-                
+
         return buffer

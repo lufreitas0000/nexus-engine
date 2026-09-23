@@ -32,11 +32,11 @@ def synthetic_image_tensor(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """
     fixture_dir = tmp_path_factory.mktemp("fixtures")
     out_path = fixture_dir / "synthetic_graph.png"
-    
+
     # Generate a minimal 100x100 RGB tensor
     img = Image.new('RGB', (100, 100), color=(73, 109, 137))
     img.save(out_path)
-        
+
     return out_path
 
 @pytest.fixture
