@@ -56,26 +56,6 @@ Contains shared logic used by all modules, such as settings and basic utility fu
 - **Orchestration & API Layer:** A pipeline controller has been built to connect the four modules seamlessly. A REST API (`FastAPI`) has been implemented to allow users to submit topics and retrieve Markdown notes. Task queues have been implemented to manage background processing without blocking the API.
 - **Production Readiness & Deployment:** Docker configuration (`Dockerfile` and `docker-compose.yml`) has been set up to make the software deploy-ready alongside PostgreSQL. Application configuration is centralized using `pydantic-settings`. Basic logging (`structlog`) has been added.
 
-### What needs to be done:
-
-### What has been completed:
-- **Implementation:** The actual Python code for the domain logic, adapters, and infrastructure has been fleshed out and written across modules.
-- **Specification for Remaining Modules:** Technical specifications have been written for `ingestion_engine`, `document_processor`, and `document_converter`.
-- **Graph Logic & Data Store Integration:** Implemented the adjacency matrix and Eigenvector Centrality ranking algorithm, storing edge relationships and query results using PostgreSQL.
-- **Strict Rate Limiting:** Strict rate limiting and exponential backoff/retry mechanisms have been implemented in the `ingestion_engine` via semaphores and delays to comply with arXiv.
-- **Document Processing Pipeline:** Implemented archive extraction (zip/tar), a fallback conversion hierarchy to PDF using `spliter`, simple math formula/figure placeholder preservation, and YAML metadata enrichment on Markdown outputs.
-- **CI/CD & Observability:** Implemented CI/CD pipelines using GitHub Actions (`.github/workflows/ci.yml`) alongside structured logging with `structlog`.
-
-
-### What has been completed:
-- **Implementation:** The actual Python code for the domain logic, adapters, and infrastructure has been fleshed out and written across modules.
-- **Specification for Remaining Modules:** Technical specifications have been written for `ingestion_engine`, `document_processor`, and `document_converter`.
-- **Graph Logic & Data Store Integration:** Implemented the adjacency matrix and Eigenvector Centrality ranking algorithm, storing edge relationships and query results using PostgreSQL.
-- **Strict Rate Limiting:** Strict rate limiting and exponential backoff/retry mechanisms have been implemented in the `ingestion_engine` via semaphores and delays to comply with arXiv.
-- **Document Processing Pipeline:** Implemented archive extraction (zip/tar), a fallback conversion hierarchy to PDF using `spliter`, simple math formula/figure placeholder preservation, and YAML metadata enrichment on Markdown outputs.
-- **CI/CD & Observability:** Implemented CI/CD pipelines using GitHub Actions (`.github/workflows/ci.yml`) alongside structured logging with `structlog`.
-
-
 ### What has been completed:
 - **Implementation:** The actual Python code for the domain logic, adapters, and infrastructure has been fleshed out and written across modules.
 - **Specification for Remaining Modules:** Technical specifications have been written for `ingestion_engine`, `document_processor`, and `document_converter`.

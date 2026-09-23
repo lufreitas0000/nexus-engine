@@ -1,0 +1,37 @@
+# Parallel Execution Plan: Divide and Conquer
+
+To implement the identified improvements efficiently, we can use parallel subagents working on distinct feature branches. The architecture of this project (Hexagonal / Ports and Adapters) naturally allows for parallel development because the modules (`document_converter`, `orchestrator`, `research_graph`, etc.) are decoupled and communicate through defined interfaces.
+
+## Subagent 1: LaTeX Conversion Engine Enhancement
+**Branch Name:** `feature/latex-macro-translation`
+**Focus:** The `document_converter` module.
+**Tasks:**
+1. Refactor `LatexToMarkdownConverter` in `document_converter/adapters/converter.py` to be more robust.
+2. Implement custom LaTeX macro parsing and package translation using template mapping.
+3. Ensure the engine remains orthogonal, separating parsing logic from output formatting.
+4. Expand unit tests in `document_converter/tests/test_converter.py` using complex LaTeX samples with macros.
+**Why Parallel?** This is self-contained string parsing and processing logic that does not affect APIs, ingestion, or the database.
+
+## Subagent 2: End-to-End Orchestration & Pipeline Hardening
+**Branch Name:** `feature/orchestrator-resilience`
+**Focus:** `orchestrator`, `api`, and `pipeline.py`.
+**Tasks:**
+1. Enhance the `process_query_task` within the ARQ worker to handle and log step-by-step failures (e.g., if downloading fails, retry; if parsing fails, save error state).
+2. Refactor `pipeline.py` (Typer CLI) to expose all module capabilities seamlessly alongside FastAPI.
+3. Add robust integration tests that run the entire pipeline end-to-end (mocking external API calls with `respx` and `aiosqlite` for db).
+**Why Parallel?** This touches the outer boundaries (API/CLI) and orchestration layer. It relies on interfaces, so it can be built while the implementation of the LaTeX parser is changing.
+
+## Subagent 3: Infrastructure, Monitoring, and `spliter` Wrapper
+**Branch Name:** `feature/infra-and-spliter-wrapper`
+**Focus:** `docker-compose.yml`, `Dockerfile`, `common/metrics`, and `spliter` integration.
+**Tasks:**
+1. Solidify the `spliter` integration. Update the subprocess call in the document processor to ensure the working directory is correctly set (`spliter/app_structurizer`) and handle its specific CLI requirements robustly.
+2. Ensure `pymupdf` is properly managed in the Docker image environment.
+3. Fix the `background_tasks_queue_length` Prometheus gauge implementation to properly poll Redis using an async job or a proper synchronous redis client.
+**Why Parallel?** Infrastructure and deployment tasks are independent of domain logic.
+
+## Execution Strategy
+1. Create the above three branches from `main`.
+2. Assign one subagent per branch.
+3. Once all subagents complete their tasks, run the full integration suite.
+4. Merge the branches back into `main` sequentially, resolving any minor structural conflicts in shared files (like `requirements.txt` if new dependencies are added).
