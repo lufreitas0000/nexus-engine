@@ -38,3 +38,9 @@ def test_get_notes_success(tmp_path):
         assert "# Fake Note" in response.json()["content"]
     finally:
         queue.output_dir = old_output_dir
+
+def test_metrics_endpoint():
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "http_requests_total" in response.text
+    assert "background_tasks_queue_length" in response.text

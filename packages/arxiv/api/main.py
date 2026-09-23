@@ -2,6 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from common.logging import setup_logging, get_logger
 from orchestrator.queue import BackgroundQueue
@@ -22,6 +23,19 @@ async def lifespan(app: FastAPI):
     await queue.stop_worker()
 
 app = FastAPI(lifespan=lifespan, title="arXiv Scraper API")
+
+from prometheus_client import Gauge
+
+# Custom metrics
+background_tasks_queue_length = Gauge(
+    "background_tasks_queue_length",
+    "Number of tasks currently in the background queue"
+)
+background_tasks_queue_length.set_function(lambda: queue.queue.qsize())
+
+# Instrument the app for Prometheus metrics
+instrumentator = Instrumentator().instrument(app)
+instrumentator.expose(app)
 
 class ResearchRequest(BaseModel):
     query: str
