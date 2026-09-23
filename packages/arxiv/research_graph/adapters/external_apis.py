@@ -7,10 +7,10 @@ from research_graph.domain.model import PaperMetadata
 class ArxivAdapter:
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
-        self.base_url = "http://export.arxiv.org/api/query"
+        self.base_url = "https://export.arxiv.org/api/query"
 
     async def search_by_query(self, query: str, max_results: int) -> List[PaperMetadata]:
-        params = {"search_query": query, "max_results": max_results}
+        params = {"search_query": query, "max_results": str(max_results)}
         response = await self.client.get(self.base_url, params=params)
         response.raise_for_status()
         return self._parse_xml_to_domain(response.text)

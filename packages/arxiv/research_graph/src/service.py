@@ -57,3 +57,30 @@ async def expand_query_graph(
         await uow.commit()
 
     return initial_ids.union(adjacent_ids)
+
+from research_graph.domain.graph import CitationGraph
+from typing import List, Dict
+
+async def rank_papers(
+    uow: PostgresUnitOfWork,
+    arxiv_ids: Set[str]
+) -> List[str]:
+    """
+    Constructs a citation graph from the DB for the given ids, computes eigenvector centrality,
+    and returns a ranked list of arxiv_ids.
+    """
+    graph = CitationGraph()
+    for arxiv_id in arxiv_ids:
+        graph.add_vertex(arxiv_id)
+
+    async with uow:
+        if uow.papers:
+            edges = await uow.papers.get_edges(list(arxiv_ids))
+            for citing_id, cited_id in edges:
+                graph.add_edge(citing_id, cited_id)
+
+    scores = graph.calculate_eigenvector_centrality()
+
+    # Sort in descending order of score
+    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    return [arxiv_id for arxiv_id, score in ranked]

@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 class BackgroundQueue:
     def __init__(self, output_dir: str = "./output"):
-        self.queue = asyncio.Queue()
+        self.queue: asyncio.Queue = asyncio.Queue()
         self.output_dir = output_dir
         self.worker_task = None
 
@@ -75,7 +75,7 @@ class BackgroundQueue:
                     continue
 
                 markdown_dir = os.path.join(self.output_dir, "markdown")
-                conv_doc = converter.convert(paper.arxiv_id, proc_doc.main_file_path, markdown_dir)
+                conv_doc = converter.convert(paper, proc_doc.main_file_path, markdown_dir)
 
                 if not conv_doc.success:
                     logger.error("conversion_failed", arxiv_id=paper.arxiv_id, error=conv_doc.error)
