@@ -1,6 +1,6 @@
 import pytest
-from src.domain.models import SpatialNode, BlockType
-from src.application.use_cases.markdown_synthesis import StructuralDispatcher, MarkdownSynthesizer
+from app_spatial_compiler.src.domain.models import SpatialNode, BlockType
+from app_spatial_compiler.src.application.use_cases.markdown_synthesis import StructuralDispatcher, MarkdownSynthesizer
 
 def test_structural_dispatcher_detects_block_types():
     # 1. Standard TEXT block

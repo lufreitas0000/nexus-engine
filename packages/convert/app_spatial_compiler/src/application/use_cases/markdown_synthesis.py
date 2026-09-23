@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from src.domain.models import SpatialNode
+from app_spatial_compiler.src.domain.models import SpatialNode
 
 class MarkdownSynthesizer:
     def __init__(self, median_width: float, median_height: float):

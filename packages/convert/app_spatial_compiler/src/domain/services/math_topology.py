@@ -1,6 +1,6 @@
 import statistics
 from collections.abc import Sequence
-from pylatexenc.latexencode import unicode_to_latex
+from pylatexenc.latexencode import unicode_to_latex  # type: ignore
 from app_spatial_compiler.src.domain.models import SpatialNode
 from app_spatial_compiler.src.domain.geometry.spatial_tree import SpatialKDTree
 

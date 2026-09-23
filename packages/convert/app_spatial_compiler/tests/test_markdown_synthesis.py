@@ -1,6 +1,6 @@
 import pytest
-from src.domain.models import SpatialNode
-from src.application.use_cases.markdown_synthesis import MarkdownSynthesizer, StructuralDispatcher
+from app_spatial_compiler.src.domain.models import SpatialNode
+from app_spatial_compiler.src.application.use_cases.markdown_synthesis import MarkdownSynthesizer, StructuralDispatcher
 
 def test_markdown_synthesizer_basic_block():
     nodes = [

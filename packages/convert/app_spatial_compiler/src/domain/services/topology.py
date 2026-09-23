@@ -1,6 +1,6 @@
 # app_spatial_compiler/src/domain/services/topology.py
 from collections.abc import Sequence
-from pylatexenc.latexencode import unicode_to_latex
+from pylatexenc.latexencode import unicode_to_latex  # type: ignore
 from app_spatial_compiler.src.domain.models import SpatialNode, MarkdownAST
 from app_spatial_compiler.src.domain.geometry.tessellation import recursive_xy_cut
 

@@ -1,6 +1,6 @@
 import pytest
-from src.domain.models import SpatialNode
-from src.domain.geometry.tessellation import get_spatial_blocks, recursive_xy_cut
+from app_spatial_compiler.src.domain.models import SpatialNode
+from app_spatial_compiler.src.domain.geometry.tessellation import get_spatial_blocks, recursive_xy_cut
 
 def test_recursive_xy_cut_relative_scaling():
     # Phase 2 implementation requirement: relative coordinate scales
