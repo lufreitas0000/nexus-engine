@@ -1,7 +1,8 @@
 import asyncio
 import httpx
-import argparse
+import typer
 import os
+from typing import Annotated
 
 from common.logging import setup_logging, get_logger
 from research_graph.adapters.external_apis import ArxivAdapter
@@ -61,27 +62,21 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
 
             if not conv_doc.success:
                 logger.error("conversion_failed", arxiv_id=paper.arxiv_id, error=conv_doc.error)
+                typer.echo(f"  [Error] Failed to convert: {conv_doc.error}", err=True)
                 continue
 
             logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.markdown_path)
-            print("  Converting to Markdown...")
-            conv_doc = converter.convert(paper, proc_doc.main_file_path, markdown_dir)
+            typer.echo(f"  [Success] Saved to {conv_doc.markdown_path}")
 
-            if not conv_doc.success:
-                print(f"  [Error] Failed to convert: {conv_doc.error}")
-                continue
+app = typer.Typer(help="arXiv Scraper Pipeline")
 
-            print(f"  [Success] Saved to {conv_doc.markdown_path}")
-
-def main():
-    parser = argparse.ArgumentParser(description="arXiv Scraper Pipeline")
-    parser.add_argument("query", type=str, help="Search query for arXiv")
-    parser.add_argument("--max_results", type=int, default=3, help="Max number of papers to process")
-    parser.add_argument("--output_dir", type=str, default="./output", help="Output directory")
-
-    args = parser.parse_args()
-
-    asyncio.run(run_pipeline(args.query, args.max_results, args.output_dir))
+@app.command()
+def main(
+    query: Annotated[str, typer.Argument(help="Search query for arXiv")],
+    max_results: Annotated[int, typer.Option(help="Max number of papers to process")] = 3,
+    output_dir: Annotated[str, typer.Option(help="Output directory")] = "./output",
+):
+    asyncio.run(run_pipeline(query, max_results, output_dir))
 
 if __name__ == "__main__":
-    main()
+    app()
