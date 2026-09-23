@@ -43,7 +43,9 @@ class LatexParser:
         for name, macro in self.macros.items():
             if macro['args'] == 0:
                 # Use regex with negative lookahead to avoid matching prefixes
-                content = re.sub(rf'\\{name}(?![a-zA-Z])', lambda m, defn=macro['def']: defn, content)
+                def zero_arg_replacer(m: Any, defn: str = str(macro['def'])) -> str:
+                    return defn
+                content = re.sub(rf'\\{name}(?![a-zA-Z])', zero_arg_replacer, content)
             else:
                 pattern = f'\\\\{name}'
                 for _ in range(macro['args']):
