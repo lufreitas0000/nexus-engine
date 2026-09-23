@@ -39,3 +39,16 @@ class SpatialNode:
 class MarkdownAST:
     content: str
     metadata: dict[str, str]
+
+@dataclass(frozen=True, slots=True)
+class BookmarkNode:
+    """Represents a node in the PDF Document Outline (TOC)."""
+    level: int
+    title: str
+    page: int
+    dest_name: str | None = None
+
+@dataclass(frozen=True, slots=True)
+class DocumentStructure:
+    """Represents the global structural metadata of the document."""
+    bookmarks: tuple[BookmarkNode, ...]
