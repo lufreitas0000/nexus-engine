@@ -8,10 +8,30 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/research_graph
       - ARXIV_RATE_LIMIT_DELAY=3.0
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       - db
+      - redis
     volumes:
       - ./output:/app/output
+
+  worker:
+    build: .
+    command: arq orchestrator.worker.WorkerSettings
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/research_graph
+      - ARXIV_RATE_LIMIT_DELAY=3.0
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./output:/app/output
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
   db:
     image: postgres:15-alpine

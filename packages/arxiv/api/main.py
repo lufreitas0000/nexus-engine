@@ -9,7 +9,8 @@ from orchestrator.queue import BackgroundQueue
 setup_logging()
 logger = get_logger(__name__)
 
-queue = BackgroundQueue()
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+queue = BackgroundQueue(redis_url=REDIS_URL)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
