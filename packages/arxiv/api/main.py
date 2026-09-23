@@ -31,7 +31,7 @@ background_tasks_queue_length = Gauge(
     "background_tasks_queue_length",
     "Number of tasks currently in the background queue"
 )
-background_tasks_queue_length.set_function(lambda: queue.queue.qsize())
+background_tasks_queue_length.set_function(lambda: queue.get_queue_size_sync())
 
 # Instrument the app for Prometheus metrics
 instrumentator = Instrumentator().instrument(app)

@@ -1,0 +1,16 @@
+# Project State Review
+
+## Current Completed Features
+Based on `ROADMAP.md` and `README.md`, the following has been implemented:
+1. **Architecture & Foundation:** High-level project architecture is set. Python dependencies, basic orchestration (FastAPI + ARQ for task queues).
+2. **Research Graph:** Implementations of graph logic (Eigenvector Centrality), Adjacency matrix, PostgreSQL integrations via SQLAlchemy. External data integration for `arXiv` and `Semantic Scholar` using HTTPX.
+3. **Ingestion Engine:** Asynchronous downloading functionality. Implemented strict rate limiting and backoff strategies to comply with arXiv's ToS.
+4. **Document Processing & Conversion:** Archive extraction (zip/tar). Fallback conversion hierarchies to process raw LaTeX to Markdown and simple YAML frontmatter. Basic figure placeholder extraction. Integration with `spliter` for PDF-to-Markdown (currently indicated as on-hold/black box). Image optimization adapter using `Pillow`.
+
+## Areas needing attention and refactoring:
+1. **Robust LaTeX processing & Macro Translation**: The `document_converter` module needs to explicitly translate custom LaTeX macros and packages using custom templates and generate Markdown. Orthogonal design for LaTeX-to-Markdown engine needs attention.
+2. **`spliter` PDF fallback service execution constraints**: Memory states that the spliter service currently runs as a subprocess calling its CLI. Its working directory must be set correctly, and it relies on `pymupdf` library which is an external concern. Refactoring the integration (e.g. standardizing how the service runs inside Docker or creating a robust wrapper around it) could be necessary.
+3. **Tests & Coverage**: Making sure end-to-end tests exist that cover the entire `Search -> Graph/Rank -> Download -> Process -> Convert` cycle. Current tests mock parts like redis/arq, which is good for unit tests, but integration tests with real components might be necessary.
+4. **Database robustness & concurrency**: Verify that PostgresUnitOfWork and asynchronous operations efficiently handle high loads if scaling the scraping queries.
+5. **CLI & pipeline usage**: Enhance Typer CLI in `pipeline.py` to be a first-class citizen alongside FastAPI.
+6. **Error handling in Background Tasks**: Better visibility into ARQ task failures and automatic retry/DLQ (Dead Letter Queue) implementations.
