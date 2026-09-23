@@ -3,6 +3,7 @@ import pytest
 from src.services.extraction import extract_document_to_markdown
 from src.domain.ports import VisionExtractor, SpatialCompiler, VisionEncoder
 from src.domain.services.topology import PdfTopologyAnalyzer
+from src.domain.models import MarkdownAST
 
 class MockTopologyAnalyzer(PdfTopologyAnalyzer):
     def __init__(self, q_factor: float):
@@ -11,8 +12,7 @@ class MockTopologyAnalyzer(PdfTopologyAnalyzer):
         return self._q_factor
 
 class MockSpatialCompiler(SpatialCompiler):
-    def compile_graph(self, nodes) -> "MarkdownAST":
-        from src.domain.models import MarkdownAST
+    def compile_graph(self, nodes) -> MarkdownAST:
         return MarkdownAST(content="# Simulated Chapter from SpatialCompiler", metadata={})
 
 class MockVisionEncoder(VisionEncoder):

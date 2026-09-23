@@ -12,6 +12,7 @@ from rich.panel import Panel
 from src.services.extraction import extract_document_to_markdown
 from src.domain.ports import VisionExtractor, SpatialCompiler, VisionEncoder
 from src.domain.services.topology import PdfTopologyAnalyzer
+from src.domain.models import MarkdownAST
 
 app = typer.Typer(help="Semantic PDF Structurizer: Map continuous PDF tensors to discrete Markdown ASTs.")
 console = Console()
@@ -35,8 +36,7 @@ def _get_hardware_info() -> str:
         return "[red]Unknown (PyTorch not installed)[/red]"
 
 class FakeSpatialCompiler(SpatialCompiler):
-    def compile_graph(self, nodes) -> "MarkdownAST":
-        from src.domain.models import MarkdownAST
+    def compile_graph(self, nodes) -> MarkdownAST:
         return MarkdownAST(content="# Fake Spatial Compiler AST", metadata={})
 
 class FakeVisionEncoder(VisionEncoder):
