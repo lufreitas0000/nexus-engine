@@ -24,7 +24,7 @@ class LatexToMarkdownConverter:
             if main_file_path.endswith(".pdf"):
                 # Use spliter as a black-box service for PDF processing
                 try:
-                    spliter_dir = str(Path(__file__).resolve().parent.parent.parent.parent / "spliter" / "app_structurizer")
+                    spliter_dir = str(Path(__file__).resolve().parent.parent.parent / "spliter" / "app_structurizer")
                     subprocess.run(
                         ["python", "-m", "src.cli", "extract", os.path.abspath(main_file_path), "--output-dir", os.path.abspath(output_dir), "--use-fake"],
                         cwd=spliter_dir,
