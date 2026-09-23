@@ -14,6 +14,8 @@ from src.domain.ports import VisionExtractor, SpatialCompiler, VisionEncoder
 from src.domain.services.topology import PdfTopologyAnalyzer
 from src.domain.models import MarkdownAST
 
+from src.domain.models import MarkdownAST
+
 app = typer.Typer(help="Semantic PDF Structurizer: Map continuous PDF tensors to discrete Markdown ASTs.")
 console = Console()
 

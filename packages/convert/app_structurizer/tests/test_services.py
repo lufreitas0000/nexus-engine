@@ -5,6 +5,8 @@ from src.domain.ports import VisionExtractor, SpatialCompiler, VisionEncoder
 from src.domain.services.topology import PdfTopologyAnalyzer
 from src.domain.models import MarkdownAST
 
+from src.domain.models import MarkdownAST
+
 class MockTopologyAnalyzer(PdfTopologyAnalyzer):
     def __init__(self, q_factor: float):
         self._q_factor = q_factor
