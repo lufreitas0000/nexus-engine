@@ -194,8 +194,10 @@ async def process_remote_task(ctx, task_payload: dict, required_vram_gb: float):
 
         if required_vram_gb <= LOCAL_VRAM_LIMIT_GB and required_vram_gb <= available_vram:
             logger.info("fallback_routing_local", task_id=task_id)
-            # Re-queue into the local pipeline directly
-            await redis.enqueue_job("process_local_task", task_payload, required_vram_gb)
+            # Re-queue into the local pipeline directly.
+            # Note: Because `process_local_task` wasn't originally registered,
+            # we re-queue to process_ingestion_task with defaults to prevent ARQ errors
+            await redis.enqueue_job("process_ingestion_task", task_payload, 3, "./output")
         else:
             # 2. Dead-Letter Queue (DLQ) Isolation
             logger.error("fallback_dlq_isolation", task_id=task_id)
