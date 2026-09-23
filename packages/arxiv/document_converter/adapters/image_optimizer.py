@@ -48,25 +48,26 @@ class ImageOptimizer:
             # If input is PDF or EPS, Pillow might struggle without Ghostscript/Poppler.
             # We'll try to open it and just skip if it fails.
             with Image.open(source_image_path) as img:
+                converted_img: Image.Image = img
                 # Convert to RGB (handles transparency in PNGs by replacing with black/white or just dropping alpha)
-                if img.mode in ('RGBA', 'P', 'LA'):
-                    background = Image.new('RGB', img.size, (255, 255, 255))
-                    if img.mode == 'P':
-                        img = img.convert('RGBA')
+                if converted_img.mode in ('RGBA', 'P', 'LA'):
+                    background = Image.new('RGB', converted_img.size, (255, 255, 255))
+                    if converted_img.mode == 'P':
+                        converted_img = converted_img.convert('RGBA')
 
-                    if img.mode in ('RGBA', 'LA'):
-                        background.paste(img, mask=img.split()[-1]) # Use alpha channel as mask
+                    if converted_img.mode in ('RGBA', 'LA'):
+                        background.paste(converted_img, mask=converted_img.split()[-1]) # Use alpha channel as mask
                     else:
-                        background.paste(img)
-                    img = background
-                elif img.mode != 'RGB':
-                    img = img.convert('RGB')
+                        background.paste(converted_img)
+                    converted_img = background
+                elif converted_img.mode != 'RGB':
+                    converted_img = converted_img.convert('RGB')
 
                 # Resize if necessary while maintaining aspect ratio
-                img.thumbnail((self.max_width, self.max_height), Image.Resampling.LANCZOS)
+                converted_img.thumbnail((self.max_width, self.max_height), Image.Resampling.LANCZOS)
 
                 # Save optimized JPEG
-                img.save(output_path, "JPEG", quality=self.quality, optimize=True)
+                converted_img.save(output_path, "JPEG", quality=self.quality, optimize=True)
 
             return str(Path(output_filename))
 
