@@ -31,10 +31,16 @@ E = mc^2
 \end{figure}
 """
 
+    from PIL import Image
     with tempfile.TemporaryDirectory() as tempdir:
         tex_path = os.path.join(tempdir, "main.tex")
         with open(tex_path, "w", encoding="utf-8") as f:
             f.write(latex_content)
+
+        # Create a dummy image file
+        img_path = os.path.join(tempdir, "test.png")
+        img = Image.new('RGB', (100, 100), color = 'red')
+        img.save(img_path)
 
         output_dir = os.path.join(tempdir, "output")
 
@@ -51,4 +57,10 @@ E = mc^2
         assert "**Bold text**" in md_content
         assert "*italic text*" in md_content
         assert "$$\nE = mc^2\n$$" in md_content
-        assert "![A test figure]" in md_content
+
+        # Check that the placeholder was replaced with the actual image path
+        assert "![A test figure](1234_figures/test.jpg)" in md_content
+
+        # Verify the image was actually created in the output directory
+        output_image_path = os.path.join(output_dir, "1234_figures", "test.jpg")
+        assert os.path.exists(output_image_path)
