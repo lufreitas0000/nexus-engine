@@ -10,9 +10,19 @@ from ingestion_engine.adapters.downloader import ArxivDownloader
 from document_processor.adapters.processor import ArchiveProcessor
 from document_converter.adapters.converter import LatexToMarkdownConverter
 from research_graph.domain.model import PaperMetadata
+from orchestrator.queue import BackgroundQueue
 
 logger = get_logger(__name__)
 setup_logging()
+
+def create_pipeline() -> BackgroundQueue:
+    """
+    Initializes and returns the orchestrator BackgroundQueue instance.
+    This encapsulates the pipeline logic making it agnostic of the primary adapter (e.g. FastAPI, TUI).
+    """
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    queue = BackgroundQueue(redis_url=redis_url)
+    return queue
 
 app = typer.Typer(help="arXiv Scraper Pipeline")
 

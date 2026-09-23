@@ -135,6 +135,8 @@ starlette==1.6.0
     #   prometheus-fastapi-instrumentator
 structlog==26.1.0
     # via -r requirements.in
+tenacity==9.1.4
+    # via -r requirements.in
 typer==0.27.2
     # via -r requirements.in
 typing-extensions==4.15.0

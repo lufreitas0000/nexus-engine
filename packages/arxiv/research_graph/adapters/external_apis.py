@@ -67,3 +67,49 @@ class SemanticScholarAdapter:
             item["arxivId"] for item in data.get("citations", [])
             if item.get("arxivId") is not None
         ]
+from tenacity import (
+    retry,
+    wait_exponential,
+    stop_after_attempt,
+    retry_if_exception_type
+)
+
+class RemoteComputeUnavailableError(Exception):
+    """Raised when the remote Colab tunnel is permanently unreachable."""
+    pass
+
+class ColabComputeAdapter:
+    def __init__(self, tunnel_url: str):
+        self.tunnel_url = tunnel_url.rstrip("/")
+        self.client = httpx.AsyncClient(timeout=300.0)
+
+    @retry(
+        # Wait 2^x * 1 second between retries, up to 30 seconds
+        wait=wait_exponential(multiplier=1, min=2, max=30),
+        # Give up after 5 attempts
+        stop=stop_after_attempt(5),
+        # Only trigger retry on transient network errors
+        retry=retry_if_exception_type((httpx.TimeoutException, httpx.ConnectError)),
+        reraise=True # Bubble up the final exception if all retries fail
+    )
+    async def execute_remote_task(self, endpoint: str, payload: dict) -> dict:
+        url = f"{self.tunnel_url}/{endpoint}"
+
+        try:
+            response = await self.client.post(url, json=payload)
+
+            # Immediately abort retries and raise custom error for tunnel disconnects
+            if response.status_code in (502, 503):
+                raise RemoteComputeUnavailableError(
+                    f"Colab tunnel disconnected. Status: {response.status_code}"
+                )
+
+            response.raise_for_status()
+            return response.json()
+
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in (502, 503):
+                raise RemoteComputeUnavailableError(
+                    f"Colab tunnel disconnected. Status: {exc.response.status_code}"
+                )
+            raise exc

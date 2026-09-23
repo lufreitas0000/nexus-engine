@@ -17,13 +17,27 @@ class BackgroundQueue:
         self.redis_settings = RedisSettings.from_dsn(self.redis_url)
         self.sync_redis = redis.Redis.from_url(self.redis_url)
 
-    async def add_query(self, query: str, max_results: int = 3):
+    async def add_task(self, task: "IngestionTask", max_results: int = 3):
         if not self.pool:
             logger.error("queue_pool_not_initialized")
             raise RuntimeError("Queue pool not initialized. Call start_worker() first.")
 
-        await self.pool.enqueue_job("process_query_task", query, max_results, self.output_dir)
-        logger.info("added_to_queue", query=query, max_results=max_results)
+        # Pass DTO as a serialized dictionary
+        from dataclasses import asdict
+        task_dict = asdict(task)
+        task_dict["task_type"] = task.task_type.value
+
+        await self.pool.enqueue_job("process_ingestion_task", task_dict, max_results, self.output_dir)
+        logger.info("added_to_queue", task_id=task.task_id, task_type=task.task_type.value, payload=task.payload)
+
+    async def add_query(self, query: str, max_results: int = 3):
+        # Kept for backwards compatibility with api/main.py
+        import uuid
+        from ingestion_engine.domain.model import IngestionTask, TaskType
+
+        task_id = str(uuid.uuid4())
+        task = IngestionTask(task_id=task_id, task_type=TaskType.SEARCH_QUERY, payload=query, max_results=max_results)
+        await self.add_task(task, max_results)
 
     async def start_worker(self):
         self.pool = await create_pool(self.redis_settings)
