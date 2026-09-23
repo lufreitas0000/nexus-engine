@@ -1,23 +1,48 @@
 import os
 import re
+import subprocess
 from pathlib import Path
 
 from document_converter.domain.model import ConvertedDocument
+from research_graph.domain.model import PaperMetadata
 
 class LatexToMarkdownConverter:
-    def convert(self, arxiv_id: str, main_file_path: str, output_dir: str) -> ConvertedDocument:
+    def convert(self, paper: PaperMetadata, main_file_path: str, output_dir: str) -> ConvertedDocument:
         try:
             if not os.path.exists(main_file_path):
                 raise FileNotFoundError(f"File not found: {main_file_path}")
 
             os.makedirs(output_dir, exist_ok=True)
-            output_path = Path(output_dir) / f"{arxiv_id}.md"
+            output_path = Path(output_dir) / f"{paper.arxiv_id}.md"
+
+            frontmatter = self._generate_frontmatter(paper)
 
             if main_file_path.endswith(".pdf"):
-                # Basic handling if we only got a PDF: just note it
-                with open(output_path, "w", encoding="utf-8") as f:
-                    f.write(f"# Document {arxiv_id}\n\n[Only PDF source was available. Conversion not supported natively.]")
-                return ConvertedDocument(arxiv_id=arxiv_id, markdown_path=str(output_path), success=True)
+                # Use spliter as a black-box service for PDF processing
+                try:
+                    spliter_dir = str(Path(__file__).resolve().parent.parent.parent.parent / "spliter" / "app_structurizer")
+                    subprocess.run(
+                        ["python", "-m", "src.cli", "extract", os.path.abspath(main_file_path), "--output-dir", os.path.abspath(output_dir), "--use-fake"],
+                        cwd=spliter_dir,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                        env=dict(os.environ, PYTHONPATH=spliter_dir)
+                    )
+
+                    if output_path.exists():
+                        # Spliter creates the file. We need to prepend the frontmatter.
+                        with open(output_path, "r", encoding="utf-8", errors="ignore") as f:
+                            content = f.read()
+                        with open(output_path, "w", encoding="utf-8") as f:
+                            f.write(frontmatter + content)
+                    else:
+                        raise Exception("Spliter did not produce expected markdown file.")
+
+                except subprocess.CalledProcessError as e:
+                    raise Exception(f"Spliter fallback failed: {e.stderr}")
+
+                return ConvertedDocument(arxiv_id=paper.arxiv_id, markdown_path=str(output_path), success=True)
 
             with open(main_file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
@@ -25,12 +50,25 @@ class LatexToMarkdownConverter:
             markdown_content = self._parse_latex(content)
 
             with open(output_path, "w", encoding="utf-8") as f:
-                f.write(markdown_content)
+                f.write(frontmatter + markdown_content)
 
-            return ConvertedDocument(arxiv_id=arxiv_id, markdown_path=str(output_path), success=True)
+            return ConvertedDocument(arxiv_id=paper.arxiv_id, markdown_path=str(output_path), success=True)
 
         except Exception as e:
-            return ConvertedDocument(arxiv_id=arxiv_id, success=False, error=str(e))
+            return ConvertedDocument(arxiv_id=paper.arxiv_id if hasattr(paper, 'arxiv_id') else str(paper), success=False, error=str(e))
+
+    def _generate_frontmatter(self, paper: PaperMetadata) -> str:
+        authors_list = "\n".join([f"  - {author}" for author in paper.authors])
+
+        return f"""---
+title: "{paper.title.replace('"', '\\"')}"
+arxiv_id: "{paper.arxiv_id}"
+published_date: "{paper.published_date}"
+authors:
+{authors_list}
+---
+
+"""
 
     def _parse_latex(self, content: str) -> str:
         """A very simplistic LaTeX to Markdown regex parser."""
