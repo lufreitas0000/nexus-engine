@@ -46,10 +46,9 @@ To reach a deploy-ready state, the software development will follow a phased app
 - [ ] **Specification:** Draft `doc_document_processor.md` and `doc_document_converter.md`.
 - [ ] **Document Processor:** Implement archive extraction (zip/tar) and heuristic detection of the "main" LaTeX file (e.g., looking for `\begin{document}`).
 - [ ] **Conversion Strategy:** Implement a fallback hierarchy for conversion: prioritize source zip (raw `.tex` and images), fallback to HTML, and finally fallback to PDF.
-- [ ] **Document Converter (LaTeX/HTML):** Build the translation engine. Parse LaTeX/HTML to extract sections, preserve mathematical formulas natively (MathJax/KaTeX compatible), and extract figure placeholders with their captions. *Must include explicit translation of custom macros in LaTeX and custom packages into Markdown compatible language. Needs custom templates.*
-- [ ] **Document Converter (PDF Fallback):** *[ON HOLD/SLEEPING]* Integrate [spliter](https://github.com/lufreitas0000/spliter) as a black-box service to handle complex, unstructured PDF-to-Markdown conversions. Development here is paused to focus on orthogonal, resilient module design.
+- [ ] **Document Converter (LaTeX/HTML):** Build the translation engine. Parse LaTeX/HTML to extract sections, preserve mathematical formulas natively (MathJax/KaTeX compatible), and extract figure placeholders with their captions.
+- [ ] **Document Converter (PDF Fallback):** Integrate [spliter](https://github.com/lufreitas0000/spliter) as a black-box service to handle complex, unstructured PDF-to-Markdown conversions.
 - [ ] **Metadata Enrichment:** Ensure the final Markdown output includes a YAML frontmatter header populated with the paper's metadata.
-- [ ] **Orthogonal Design:** Develop resilient, decoupled modules that process these dependencies independently. Create a sequential development plan (AI_TASKS.md) with custom descriptions for AI agents to subdivide the LaTeX to Markdown conversion independently of the PDF spliter software.
 - [ ] **Image Optimization:** Implement an image compression utility for extracted figures.
 
 ### Phase 4: Orchestration & API Layer (Week 6)

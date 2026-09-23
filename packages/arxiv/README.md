@@ -8,8 +8,7 @@ This system automates the process of finding, downloading, and converting scient
 2. **Download**: The system safely downloads the source files (LaTeX) or PDFs of the top-ranked papers.
 3. **Extract**: It opens the downloaded archives and identifies the main document.
 4. **Convert**: It converts the source files into a clean Markdown file. It first prioritizes processing the source zip file containing the raw LaTeX (`.tex`) files and images. If the source is unavailable, it falls back to extracting the HTML version or the PDF.
-   - **LaTeX to Markdown:** Explicitly translates custom macros and packages into Markdown compatible language using custom templates. Built orthogonally to other format handlers.
-   - **PDF Fallback:** *[ON HOLD/SLEEPING]* For converting PDFs to Markdown, it integrates [spliter](https://github.com/lufreitas0000/spliter) as a black-box service to process unstructured PDFs into a structured Markdown AST. Currently paused to focus on decoupled module design.
+   - **PDF Fallback:** For converting PDFs to Markdown, it integrates [spliter](https://github.com/lufreitas0000/spliter) as a black-box service to process unstructured PDFs into a structured Markdown AST.
    - **Metadata Header:** The final Markdown output will include a YAML frontmatter header containing the paper's metadata.
 
 ## Folder Structure Guide
