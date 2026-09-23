@@ -14,8 +14,6 @@ logger = get_logger(__name__)
 async def run_pipeline(query: str, max_results: int, output_dir: str):
     setup_logging()
     logger.info("pipeline_started", query=query, max_results=max_results)
-async def run_pipeline(query: str, max_results: int, output_dir: str):
-    print(f"Starting pipeline for query: '{query}'")
 
     # Instantiate modules
     async with httpx.AsyncClient() as client:
@@ -45,26 +43,6 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
 
             if not dl_task.success or not dl_task.file_path:
                 logger.error("download_failed", arxiv_id=paper.arxiv_id, error=dl_task.error)
-        print(f"Searching arXiv for top {max_results} results...")
-        papers = await arxiv_adapter.search_by_query(query, max_results)
-
-        if not papers:
-            print("No papers found.")
-            return
-
-        print(f"Found {len(papers)} papers. Starting download and conversion...")
-
-        # We process them sequentially in this simple CLI, but downloader has a semaphore
-        for paper in papers:
-            print(f"\nProcessing: {paper.arxiv_id} - {paper.title}")
-
-            # 2. Download
-            download_dir = os.path.join(output_dir, "downloads")
-            print("  Downloading...")
-            dl_task = await downloader.download_paper(paper.arxiv_id, download_dir)
-
-            if not dl_task.success or not dl_task.file_path:
-                print(f"  [Error] Failed to download: {dl_task.error}")
                 continue
 
             # 3. Process/Extract
@@ -74,11 +52,6 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
 
             if not proc_doc.success or not proc_doc.main_file_path:
                 logger.error("processing_failed", arxiv_id=paper.arxiv_id, error=proc_doc.error)
-            print("  Extracting...")
-            proc_doc = processor.process_archive(paper.arxiv_id, dl_task.file_path, extract_dir)
-
-            if not proc_doc.success or not proc_doc.main_file_path:
-                print(f"  [Error] Failed to process archive: {proc_doc.error}")
                 continue
 
             # 4. Convert
