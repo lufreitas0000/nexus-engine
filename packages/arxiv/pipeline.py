@@ -64,6 +64,14 @@ async def run_pipeline(query: str, max_results: int, output_dir: str):
                 continue
 
             logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.markdown_path)
+            print("  Converting to Markdown...")
+            conv_doc = converter.convert(paper, proc_doc.main_file_path, markdown_dir)
+
+            if not conv_doc.success:
+                print(f"  [Error] Failed to convert: {conv_doc.error}")
+                continue
+
+            print(f"  [Success] Saved to {conv_doc.markdown_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="arXiv Scraper Pipeline")
