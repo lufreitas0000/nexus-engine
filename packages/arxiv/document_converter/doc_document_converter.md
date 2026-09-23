@@ -1,8 +1,8 @@
 # Document Converter Specification
 
-The `document_converter` module handles the translation of source documents (LaTeX or PDF) into a clean, normalized Markdown format.
+## 1. Domain Modeling
 
-## Responsibilities
+The document converter translates complex scientific source formats (like LaTeX or PDFs) into structured Markdown AST formats.
 
 1. **Format Translation**: It must accept a path to a LaTeX `.tex` file (or gracefully handle a `.pdf` file if conversion is supported, though LaTeX is prioritized).
 2. **Mathematical Equations**: It must preserve math equations. Inline math `$x$` and block math `\[ ... \]` or `\begin{equation}...\end{equation}` should be converted into Markdown math formatting (e.g. `$x$` and `$$...$$`) which is standard for most static site generators or note-taking apps.

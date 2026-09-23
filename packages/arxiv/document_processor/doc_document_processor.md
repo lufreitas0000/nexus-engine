@@ -1,8 +1,8 @@
 # Document Processor Specification
 
-The `document_processor` module acts as the file manager for downloaded research papers.
+## 1. Domain Modeling
 
-## Responsibilities
+The document processor manages the extraction and file structure parsing of the raw compressed archives downloaded from arXiv.
 
 1.  **Archive Extraction:** Downloaded files are typically `.tar.gz` archives containing multiple files (images, `.tex` source files, `.bib` files, etc.). The processor must extract these into a temporary working directory.
 2.  **Main File Discovery:** It must locate the primary document file that contains the actual paper content.
