@@ -12,7 +12,7 @@ from textual import work
 import redis.asyncio as redis_async
 
 from pipeline import create_pipeline
-from front.components.widgets import TaskInput, ProcessingQueueTable
+from front.components.widgets import TaskInput, ProcessingQueueTable, DLQDataTable
 from ingestion_engine.domain.model import TaskType
 
 class OrchestratorApp(App):
@@ -33,6 +33,7 @@ class OrchestratorApp(App):
         yield Header()
         yield TaskInput()
         yield ProcessingQueueTable(id="queue_table")
+        yield DLQDataTable(id="dlq_table")
         yield RichLog(id="main_log", highlight=True, markup=True)
         yield Footer()
 
@@ -43,6 +44,7 @@ class OrchestratorApp(App):
         log_widget.write("[bold green]Starting orchestrator pipeline...[/bold green]")
         self.start_pipeline_worker()
         self.start_pubsub_listener()
+        self.poll_dlq()
 
     async def on_input_submitted(self, message: Input.Submitted) -> None:
         """Intercepts user input, constructs task, and pushes to queue."""
@@ -122,6 +124,66 @@ class OrchestratorApp(App):
         except Exception as e:
             log_widget = self.query_one("#main_log", RichLog)
             log_widget.write(f"[bold red]PubSub error: {e}[/bold red]")
+
+    @work(exclusive=True, thread=False)
+    async def poll_dlq(self) -> None:
+        """Polls the Redis DLQ periodically and updates the UI."""
+        table = self.query_one("#dlq_table", DLQDataTable)
+        try:
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            client = redis_async.from_url(redis_url)
+
+            while True:
+                dlq_items = await client.lrange("pipeline_dlq", 0, -1)
+
+                # Update UI thread-safely
+                def update_table():
+                    table.clear()
+                    for item in dlq_items:
+                        data = json.loads(item)
+                        task_id = data["task_payload"].get("task_id", "N/A")
+                        table.add_row(
+                            task_id,
+                            data.get("error", "N/A"),
+                            str(data.get("required_vram_gb", "N/A")),
+                            data.get("status", "N/A"),
+                            key=task_id
+                        )
+                self.call_from_thread(update_table)
+                await asyncio.sleep(2)
+        except Exception as e:
+            log_widget = self.query_one("#main_log", RichLog)
+            log_widget.write(f"[bold red]DLQ poll error: {e}[/bold red]")
+
+    async def on_dlq_data_table_retry_requested(self, message: DLQDataTable.RetryRequested) -> None:
+        """Intercepts the retry event, removes item from DLQ, and requeues it."""
+        task_id = message.task_id
+        log_widget = self.query_one("#main_log", RichLog)
+
+        try:
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            client = redis_async.from_url(redis_url)
+            dlq_items = await client.lrange("pipeline_dlq", 0, -1)
+
+            for item in dlq_items:
+                data = json.loads(item)
+                if data["task_payload"].get("task_id") == task_id:
+                    # Remove from DLQ
+                    await client.lrem("pipeline_dlq", 1, item)
+                    # Requeue to ARQ orchestrator by interacting with the established pool
+                    if self.queue and self.queue.pool:
+                        await self.queue.pool.enqueue_job(
+                            "process_remote_task",
+                            data["task_payload"],
+                            data["required_vram_gb"]
+                        )
+                        log_widget.write(f"[bold green]Task {task_id} successfully re-queued from DLQ.[/bold green]")
+                    else:
+                        log_widget.write(f"[bold red]Failed to requeue: Queue pool not initialized.[/bold red]")
+                    break
+        except Exception as e:
+            log_widget.write(f"[bold red]Retry error: {e}[/bold red]")
+
 
     async def on_unmount(self) -> None:
         """Lifecycle event when application unmounts."""
