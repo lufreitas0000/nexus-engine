@@ -1,5 +1,6 @@
 import os
 import asyncio
+import redis
 
 from arq import create_pool
 from arq.connections import RedisSettings
@@ -14,6 +15,7 @@ class BackgroundQueue:
         self.output_dir = output_dir
         self.pool = None
         self.redis_settings = RedisSettings.from_dsn(self.redis_url)
+        self.sync_redis = redis.Redis.from_url(self.redis_url)
 
     async def add_query(self, query: str, max_results: int = 3):
         if not self.pool:
@@ -35,9 +37,10 @@ class BackgroundQueue:
     def get_queue_size_sync(self) -> int:
         """
         Synchronously fetches the queue size.
-        Since Redis access is usually async in arq, we might need a workaround for Prometheus Gauge.
-        However, prometheus_client set_function allows executing arbitrary code.
-        Since we don't have synchronous redis client here, we can return 0 or implement a check.
-        For now, let's return 0 as placeholder.
+        Uses a synchronous redis client to count jobs in arq's default queue.
         """
-        return 0
+        try:
+            return self.sync_redis.zcard("arq:queue")
+        except Exception as e:
+            logger.error("get_queue_size_sync_error", error=str(e))
+            return 0

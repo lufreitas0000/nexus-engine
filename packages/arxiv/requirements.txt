@@ -103,6 +103,8 @@ pygments==2.19.2
     #   rich
 pyjwt==2.14.0
     # via redis
+pymupdf==1.28.2
+    # via -r requirements.in
 pyproject-hooks==1.3.3
     # via
     #   build
