@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 
-from src.converter.epub_converter import convert_markdown_to_epub
+from src.converter.epub_converter import convert_ast_to_epub
 from src.dispatcher.config import load_smtp_config
 from src.dispatcher.mailer import dispatch_artifact_to_kindle
 from src.domain.registry import KINDLE_MODELS
@@ -57,21 +57,21 @@ def main() -> None:
             # Using convert to convert PDF to MD
             from src.converter.convert_integration import convert_pdf_to_md
 
-            md_path = convert_pdf_to_md(source_path)
+            ast_path = convert_pdf_to_md(source_path)
 
             sys.stdout.write(
-                f"Initiating EPUB compilation pipeline for generated markdown: {md_path.name} (Model: {arguments.model})\n"
+                f"Initiating EPUB compilation pipeline for generated AST: {ast_path.name} (Model: {arguments.model})\n"
             )
             artifacts_to_dispatch.append(
-                convert_markdown_to_epub(md_path, hardware_constraints=target_hardware)
+                convert_ast_to_epub(ast_path, hardware_constraints=target_hardware)
             )
 
-        elif source_path.suffix.lower() == ".md":
+        elif source_path.suffix.lower() == ".json":
             sys.stdout.write(
-                f"Initiating EPUB compilation pipeline for: {source_path.name} (Model: {arguments.model})\n"
+                f"Initiating EPUB compilation pipeline for AST: {source_path.name} (Model: {arguments.model})\n"
             )
             artifacts_to_dispatch.append(
-                convert_markdown_to_epub(
+                convert_ast_to_epub(
                     source_path, hardware_constraints=target_hardware
                 )
             )

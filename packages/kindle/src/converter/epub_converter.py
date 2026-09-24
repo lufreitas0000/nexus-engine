@@ -6,7 +6,10 @@ from pathlib import Path
 from src.domain.types import TargetHardwareConstraints
 
 
-def convert_markdown_to_epub(
+import json
+from nexus_schema import Document, document_to_markdown
+
+def convert_ast_to_epub(
     input_path: Path | str,
     output_path: Path | str | None = None,
     hardware_constraints: TargetHardwareConstraints | None = None,
@@ -14,7 +17,7 @@ def convert_markdown_to_epub(
     input_file = Path(input_path).resolve()
 
     if not input_file.exists():
-        raise FileNotFoundError(f"Source markdown file not located: {input_file}")
+        raise FileNotFoundError(f"Source AST file not located: {input_file}")
 
     if output_path is None:
         output_file = input_file.with_suffix(".epub")
@@ -22,7 +25,10 @@ def convert_markdown_to_epub(
         output_file = Path(output_path).resolve()
 
     with open(input_file, "r", encoding="utf-8") as file_descriptor:
-        source_content = file_descriptor.read()
+        doc_json = json.load(file_descriptor)
+        
+    doc = Document.model_validate(doc_json)
+    source_content = document_to_markdown(doc)
 
     # Phase 1: Regex boundary substitutions
     processed_content = re.sub(r"\[\[(.*?)\|(.*?)\]\]", r"[\2](\1.md)", source_content)

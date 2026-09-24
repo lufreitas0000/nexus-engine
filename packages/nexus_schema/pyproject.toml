@@ -1,0 +1,6 @@
+[project]
+name = "nexus_schema"
+version = "0.1.0"
+description = "nexus_schema package"
+requires-python = ">=3.12"
+dependencies = []

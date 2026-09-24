@@ -174,10 +174,11 @@ class LatexToMarkdownConverter:
                         with open(output_path, "r", encoding="utf-8", errors="ignore") as f:
                             content_str = f.read()
                         
-                        doc = Document(
-                            metadata=Metadata(title=paper.title, author=", ".join(paper.authors)),
-                            sections=[Section(content=[Paragraph(text=content_str)])]
-                        )
+                        from nexus_schema import markdown_to_document
+                        # Convert markdown_content to AST
+                        doc = markdown_to_document(content_str)
+                        doc.metadata.title = paper.title
+                        doc.metadata.author = ", ".join(paper.authors)
                         with open(output_path, "w", encoding="utf-8") as f:
                             json.dump(doc.model_dump(), f, ensure_ascii=False, indent=2)
                     else:
@@ -195,11 +196,11 @@ class LatexToMarkdownConverter:
             markdown_content = self._parse_latex(content, source_dir, output_dir, paper.arxiv_id)
 
 
+            from nexus_schema import markdown_to_document
             # Convert markdown_content to AST
-            doc = Document(
-                metadata=Metadata(title=paper.title, author=", ".join(paper.authors)),
-                sections=[Section(content=[Paragraph(text=markdown_content)])]
-            )
+            doc = markdown_to_document(markdown_content)
+            doc.metadata.title = paper.title
+            doc.metadata.author = ", ".join(paper.authors)
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(doc.model_dump(), f, ensure_ascii=False, indent=2)
 
