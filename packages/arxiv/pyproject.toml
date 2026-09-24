@@ -3,7 +3,14 @@ name = "arxiv"
 version = "0.1.0"
 description = "arxiv package"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "nexus-schema",
+    "nexus-workspace",
+]
 
 [tool.setuptools]
 packages = ["api", "colab", "front", "common", "automation", "orchestrator", "research_graph", "ingestion_engine", "document_processor", "document_converter", "agentic_orchestrator"]
+
+[tool.uv.sources]
+nexus-schema = { workspace = true }
+nexus-workspace = { workspace = true }

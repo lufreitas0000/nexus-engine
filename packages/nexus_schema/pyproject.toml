@@ -7,7 +7,7 @@ name = "nexus_schema"
 version = "0.1.0"
 description = "nexus_schema package"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["pydantic>=2.0"]
 
 [tool.setuptools]
-py-modules = ["models", "parser"]
+packages = ["nexus_schema"]

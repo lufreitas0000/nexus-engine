@@ -3,7 +3,14 @@ name = "kindle"
 version = "0.1.0"
 description = "kindle package"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "nexus-schema",
+    "nexus-workspace",
+]
 
 [tool.setuptools]
 packages = ["src"]
+
+[tool.uv.sources]
+nexus-schema = { workspace = true }
+nexus-workspace = { workspace = true }

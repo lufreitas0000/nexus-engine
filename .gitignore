@@ -1,2 +1,14 @@
 __pycache__/
 *.pyc
+
+# Python package metadata
+*.egg-info/
+
+# Virtual environments
+.venv/
+
+# Testing
+.pytest_cache/
+
+# Temporary test artifacts
+e2e_dummy.pdf

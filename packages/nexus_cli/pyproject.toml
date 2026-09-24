@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "nexus_cli"
 version = "0.1.0"
@@ -8,8 +12,16 @@ dependencies = [
     "convert",
     "kindle",
     "nexus_schema",
-    "nexus_workspace"
+    "nexus_workspace",
+    "typer>=0.9.0",
+    "rich>=13.0.0"
 ]
+
+[project.scripts]
+nexus = "nexus_cli.main:app"
+
+[tool.setuptools]
+packages = ["nexus_cli"]
 
 [tool.uv.sources]
 arxiv = { workspace = true }

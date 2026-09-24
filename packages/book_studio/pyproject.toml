@@ -3,4 +3,11 @@ name = "book_studio"
 version = "0.1.0"
 description = "book_studio package"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "nexus-schema",
+    "nexus-workspace",
+]
+
+[tool.uv.sources]
+nexus-schema = { workspace = true }
+nexus-workspace = { workspace = true }

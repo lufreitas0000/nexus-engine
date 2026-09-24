@@ -10,4 +10,4 @@ requires-python = ">=3.12"
 dependencies = []
 
 [tool.setuptools]
-py-modules = ["resolver"]
+packages = ["nexus_workspace"]

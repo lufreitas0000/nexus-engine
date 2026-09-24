@@ -23,6 +23,10 @@ dependencies = [
     "uvicorn[standard]>=0.28.0",
     "python-multipart>=0.0.9",
     "httpx>=0.27.0",
+    "pylatexenc>=2.10",
+    "pdfminer.six>=20221105",
+    "nexus-schema",
+    "nexus-workspace",
 ]
 
 [project.optional-dependencies]
@@ -35,3 +39,7 @@ dev = [
 
 [tool.setuptools]
 packages = ['app_structurizer', 'app_orchestrator', 'app_vision_encoder', 'app_spatial_compiler']
+
+[tool.uv.sources]
+nexus-schema = { workspace = true }
+nexus-workspace = { workspace = true }
