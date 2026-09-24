@@ -1,65 +1,52 @@
 import asyncio
-from google.antigravity import LocalAgentConfig, CapabilitiesConfig, Agent
+from google.antigravity import LocalAgentConfig, CapabilitiesConfig
 from google.antigravity.utils.interactive import run_interactive_loop
-from automation.tools import (
-    push_arxiv_query,
-    read_dlq,
-    check_completed_graphs,
-    semantic_search_papers
-)
+from google.antigravity.execution import execute_agent_stateless
+
+from automation.tools import push_arxiv_query, read_dlq, check_completed_graphs
 from automation.tools_obsidian import export_graph_to_obsidian
+from automation.sub_agents import get_math_extraction_agent, get_literature_agent
+
+async def delegate_to_math_agent(text_payload: str) -> str:
+    """Delegates mathematical derivation extraction to the specialized Math Sub-Agent."""
+    config = get_math_extraction_agent()
+    result = await execute_agent_stateless(config, prompt=text_payload)
+    return result.text
+
+async def delegate_to_literature_agent(text_payload: str) -> str:
+    """Delegates bibliographical verification to the specialized Literature Sub-Agent."""
+    config = get_literature_agent()
+    result = await execute_agent_stateless(config, prompt=text_payload)
+    return result.text
 
 async def main():
-    # 1. Extraction Sub-Agent (Mathematical derivations)
-    extraction_agent = Agent(
-        config=LocalAgentConfig(
-            system_instructions=(
-                "You are the Extraction Sub-Agent. Your focus is mathematical purity and context isolation.\n"
-                "You parse high-density academic papers and isolate Definitions, Lemmas, Theorems, and Proofs."
-            ),
-            tools=[],
-            capabilities=CapabilitiesConfig()
-        ),
-        name="ExtractionAgent"
-    )
-
-    # 2. Literature Sub-Agent (Cross-referencing)
-    literature_agent = Agent(
-        config=LocalAgentConfig(
-            system_instructions=(
-                "You are the Literature Sub-Agent. Your objective is cross-referencing and semantic synthesis.\n"
-                "You synthesize literature reviews and answer specific physics questions."
-            ),
-            tools=[semantic_search_papers],
-            capabilities=CapabilitiesConfig()
-        ),
-        name="LiteratureAgent"
-    )
-
-    # 3. Main Orchestrator Agent
     system_instructions = (
-        "You are the Research Orchestrator Agent. Your primary objectives are:\n"
-        "1. Feed the ingestion pipeline by pushing relevant arXiv IDs based on user requests using push_arxiv_query().\n"
-        "2. Proactively monitor the Redis Dead-Letter Queue (DLQ) using read_dlq().\n"
-        "3. Analyze any failed tasks and suggest re-routing or re-queueing strategies.\n"
-        "4. Check PostgreSQL using check_completed_graphs() to verify the pipeline's output.\n"
-        "5. Export completed graphs to Obsidian using export_graph_to_obsidian().\n"
-        "6. Delegate deep mathematical parsing to the ExtractionAgent and literature synthesis to the LiteratureAgent.\n\n"
-        "Operate autonomously but report your logic and findings clearly to the terminal."
+        "You are the Research Orchestrator Agent acting as a Scrum Master. "
+        "You decompose complex academic processing tasks into orthogonal submodules.\n"
+        "1. Identify the input source (e.g., arXiv ID or raw text).\n"
+        "2. Use delegate_to_math_agent for extracting pure mathematical physics derivations.\n"
+        "3. Use delegate_to_literature_agent for cross-referencing and citation validation.\n"
+        "4. Use export_graph_to_obsidian to save the final synthesized output.\n"
+        "5. Monitor infrastructure queues via read_dlq and check_completed_graphs.\n"
+        "State facts, define constraints, and explain logical steps during orchestration."
     )
+
+    tools = [
+        push_arxiv_query,
+        read_dlq,
+        check_completed_graphs,
+        export_graph_to_obsidian,
+        delegate_to_math_agent,
+        delegate_to_literature_agent
+    ]
 
     config = LocalAgentConfig(
         system_instructions=system_instructions,
-        tools=[push_arxiv_query, read_dlq, check_completed_graphs, export_graph_to_obsidian],
+        tools=tools,
         capabilities=CapabilitiesConfig(),
-        sub_agents=[extraction_agent, literature_agent]
     )
 
-    print("[INFO] Initializing Antigravity Research Orchestrator with Sub-Agents...")
-    print("[INFO] Sub-Agents loaded: ExtractionAgent, LiteratureAgent")
-    print("[INFO] Tools loaded: push_arxiv_query, read_dlq, check_completed_graphs, export_graph_to_obsidian, semantic_search_papers")
-
-    # Launch the asynchronous agentic loop
+    print("[INFO] Initializing Multi-Agent Research Orchestrator...")
     await run_interactive_loop(config)
 
 if __name__ == "__main__":
