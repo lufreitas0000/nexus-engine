@@ -1,7 +1,7 @@
 import os
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
-from research_graph.adapters.obsidian import ObsidianAdapter
+from research_graph.src.infra.obsidian import ObsidianAdapter
 
 async def export_graph_to_obsidian(graph_id: str, vault_path: str = "./vault") -> str:
     """Queries a complete graph from PostgreSQL and exports it to an Obsidian Markdown note."""

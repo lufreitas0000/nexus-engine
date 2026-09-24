@@ -13,7 +13,7 @@ import redis.asyncio as redis_async
 
 from pipeline import create_pipeline
 from front.components.widgets import TaskInput, ProcessingQueueTable, DLQDataTable
-from ingestion_engine.domain.model import TaskType
+from ingestion_engine.src.domain.model import TaskType
 
 class OrchestratorApp(App):
     """A Textual UI to orchestrate the arXiv background pipeline."""
@@ -65,7 +65,7 @@ class OrchestratorApp(App):
 
         if self.queue:
             try:
-                from ingestion_engine.domain.model import IngestionTask, TaskType
+                from ingestion_engine.src.domain.model import IngestionTask, TaskType
                 task = IngestionTask(task_id=task_id, task_type=TaskType(task_type), payload=user_input)
                 await self.queue.add_task(task)
 
