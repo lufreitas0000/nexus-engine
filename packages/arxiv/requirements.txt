@@ -296,11 +296,11 @@ mypy==1.19.1
     # via -r requirements.in
 mypy-extensions==1.1.0
     # via mypy
-networkx==3.7
+networkx>=3.0
     # via
     #   dvc
     #   torch
-numpy==2.5.3
+numpy>=1.26.0
     # via
     #   accelerate
     #   chroma-hnswlib
@@ -574,7 +574,7 @@ safetensors==0.8.0
     # via
     #   accelerate
     #   transformers
-scipy==1.18.1
+scipy>=1.11.0
     # via bitsandbytes
 scmrepo==3.6.2
     # via
