@@ -3,11 +3,13 @@ from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTChar, LTComponent
 from app_spatial_compiler.src.domain.models import SpatialNode
 
+
 class PDFExtractorAdapter:
     """
     Infrastructure adapter implementing Direct Memory Access (DMA)
     over PDF layout streams to extract character-level spatial manifolds.
     """
+
     def extract_nodes(self, pdf_path: str) -> list[SpatialNode]:
         nodes: list[SpatialNode] = []
         for page_layout in extract_pages(pdf_path):
@@ -22,7 +24,7 @@ class PDFExtractorAdapter:
                 y0=float(element.y0),
                 x1=float(element.x1),
                 y1=float(element.y1),
-                font_size=float(element.size)
+                font_size=float(element.size),
             )
         elif hasattr(element, "__iter__"):
             for child in element:

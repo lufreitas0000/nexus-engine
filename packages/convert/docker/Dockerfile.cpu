@@ -26,10 +26,13 @@ ENV PATH="/opt/venv/bin:$PATH" \
 RUN useradd -m appuser
 WORKDIR /app
 
-COPY semantic_pdf_splitter /app/semantic_pdf_splitter
+COPY app_orchestrator /app/app_orchestrator
+COPY app_spatial_compiler /app/app_spatial_compiler
+COPY app_structurizer /app/app_structurizer
+COPY app_vision_encoder /app/app_vision_encoder
+COPY cli.py /app/cli.py
 
 RUN chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 8000
-ENTRYPOINT ["uvicorn", "semantic_pdf_splitter.infrastructure.api.app:create_app", "--host", "0.0.0.0", "--port", "8000", "--factory"]
+ENTRYPOINT ["python", "cli.py"]

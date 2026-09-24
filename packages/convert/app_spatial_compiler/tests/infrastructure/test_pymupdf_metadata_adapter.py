@@ -2,7 +2,10 @@ import json
 import pytest
 import fitz  # type: ignore
 from app_spatial_compiler.src.domain.models import DocumentStructure, BookmarkNode
-from app_spatial_compiler.src.infrastructure.adapters.pymupdf_extractor import PyMuPDFMetadataAdapter
+from app_spatial_compiler.src.infrastructure.adapters.pymupdf_extractor import (
+    PyMuPDFMetadataAdapter,
+)
+
 
 @pytest.fixture
 def sample_pdf_with_toc() -> bytes:
@@ -12,16 +15,13 @@ def sample_pdf_with_toc() -> bytes:
     doc.new_page()
 
     # TOC format for fitz.set_toc: [level, title, page, dest_dict]
-    toc = [
-        [1, "Chapter 1", 1],
-        [2, "Section 1.1", 1],
-        [1, "Chapter 2", 2]
-    ]
+    toc = [[1, "Chapter 1", 1], [2, "Section 1.1", 1], [1, "Chapter 2", 2]]
     doc.set_toc(toc)
 
     pdf_bytes = doc.write()
     doc.close()
     return pdf_bytes
+
 
 def test_extract_structure_from_bytes(sample_pdf_with_toc: bytes):
     """Test that the adapter can extract TOC bookmarks from an in-memory PDF."""
@@ -45,6 +45,7 @@ def test_extract_structure_from_bytes(sample_pdf_with_toc: bytes):
     assert b3.title == "Chapter 2"
     assert b3.page == 2
 
+
 def test_to_markdown_json(sample_pdf_with_toc: bytes):
     """Test that the intermediate structure correctly compiles to JSON."""
     adapter = PyMuPDFMetadataAdapter()
@@ -61,6 +62,7 @@ def test_to_markdown_json(sample_pdf_with_toc: bytes):
 
     assert data["bookmarks"][1]["title"] == "Section 1.1"
     assert data["bookmarks"][1]["level"] == 2
+
 
 def test_extract_structure_empty_or_invalid():
     """Test fallback when given empty bytes or invalid PDF."""

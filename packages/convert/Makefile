@@ -5,9 +5,8 @@ MYPY   = $(PYTHON) -m mypy
 PIP    = $(PYTHON) -m pip
 
 # Package Resolution
-PACKAGE_ROOT = semantic_pdf_splitter
-SRC_DIR = $(PACKAGE_ROOT)/src
-TESTS_DIR = $(PACKAGE_ROOT)/tests
+PACKAGE_ROOT = .
+APP_MODULES = app_orchestrator app_spatial_compiler app_structurizer app_vision_encoder
 
 .PHONY: all test lint install clean help
 
@@ -16,12 +15,12 @@ all: lint test
 ## test: Execute all TDD assertions
 test:
 	@echo "Running tests..."
-	export PYTHONPATH=$$(pwd)/$(PACKAGE_ROOT)/src && cd $(PACKAGE_ROOT) && $(PYTEST) tests -v
+	export PYTHONPATH=$$(pwd) && $(PYTEST) -n auto tests $(APP_MODULES) -v
 
 ## lint: Execute strict static analysis
 lint:
 	@echo "Executing strict static analysis..."
-	$(MYPY) --config-file $(PACKAGE_ROOT)/mypy.ini -p semantic_pdf_splitter
+	$(MYPY) $(APP_MODULES) cli.py
 
 ## install: Synchronize dependencies
 install:

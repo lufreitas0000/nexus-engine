@@ -2,17 +2,20 @@ from dataclasses import dataclass
 from typing import Optional
 from enum import Enum, auto
 
+
 class BlockType(Enum):
     """
     Categorization of Euclidean manifolds based on typographic intent.
     Used to select the appropriate 1D synthesis morphism.
     """
-    TEXT = auto()      # Standard body paragraphs
-    MATH = auto()      # Display or inline LaTeX manifolds
-    HEADER = auto()    # Structural headings (# , ##)
-    ITEMIZE = auto()   # Bulleted or numbered lists
-    FIGURE = auto()    # Visual voids delegated to VLM
-    TABLE = auto()     # Grid-aligned tabular data
+
+    TEXT = auto()  # Standard body paragraphs
+    MATH = auto()  # Display or inline LaTeX manifolds
+    HEADER = auto()  # Structural headings (# , ##)
+    ITEMIZE = auto()  # Bulleted or numbered lists
+    FIGURE = auto()  # Visual voids delegated to VLM
+    TABLE = auto()  # Grid-aligned tabular data
+
 
 @dataclass(frozen=True, slots=True)
 class SpatialNode:
@@ -35,20 +38,25 @@ class SpatialNode:
     def centroid(self) -> tuple[float, float]:
         return ((self.x0 + self.x1) / 2.0, (self.y0 + self.y1) / 2.0)
 
+
 @dataclass(frozen=True, slots=True)
 class MarkdownAST:
     content: str
     metadata: dict[str, str]
 
+
 @dataclass(frozen=True, slots=True)
 class BookmarkNode:
     """Represents a node in the PDF Document Outline (TOC)."""
+
     level: int
     title: str
     page: int
     dest_name: str | None = None
 
+
 @dataclass(frozen=True, slots=True)
 class DocumentStructure:
     """Represents the global structural metadata of the document."""
+
     bookmarks: tuple[BookmarkNode, ...]

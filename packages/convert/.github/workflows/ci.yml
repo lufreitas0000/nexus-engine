@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.11", "3.12"]
 
     steps:
     - uses: actions/checkout@v4
@@ -22,24 +22,25 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 black mypy pytest pytest-cov
+        pip install flake8 black mypy pytest pytest-cov pytest-xdist filelock
         pip install -r requirements.txt
 
     - name: Run Black (Formatting Check)
-      run: black --check semantic_pdf_splitter/src semantic_pdf_splitter/tests
+      run: black --check app_orchestrator app_spatial_compiler app_structurizer app_vision_encoder tests cli.py
 
     - name: Run Flake8 (Linting)
-      run: flake8 semantic_pdf_splitter/src semantic_pdf_splitter/tests
+      run: flake8 app_orchestrator app_spatial_compiler app_structurizer app_vision_encoder tests cli.py
 
     - name: Run Mypy (Static Types)
       run: make lint
 
     - name: Run Pytest
-      run: export PYTHONPATH=$(pwd)/semantic_pdf_splitter/src && pytest semantic_pdf_splitter/tests/ -v
+      run: export PYTHONPATH=$(pwd) && pytest -n auto -v
 
   docker-build-verify:
     runs-on: ubuntu-latest

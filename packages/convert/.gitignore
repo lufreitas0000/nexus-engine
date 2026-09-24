@@ -9,3 +9,5 @@ coverage.xml
 !tests/fixtures/*.pdf
 temp_out/
 output/
+.mypy_cache
+.mypy_cache/

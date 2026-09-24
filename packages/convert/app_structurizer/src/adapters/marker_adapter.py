@@ -6,8 +6,9 @@ Maps the pure domain structures to the marker-pdf/PyTorch tensor operations.
 from typing import Any, Dict, Optional
 import time
 
-from src.domain.models import RawDocument, MarkdownAST
-from src.domain.ports import VisionExtractor
+from app_structurizer.src.domain.models import RawDocument, MarkdownAST
+from app_structurizer.src.domain.ports import VisionExtractor
+
 
 class MarkerVisionAdapter:
     """
@@ -27,7 +28,7 @@ class MarkerVisionAdapter:
         if self._models is None:
             # Delayed import to prevent PyTorch from bloating the module namespace
             # if this adapter is instantiated but never used.
-            from marker.models import load_all_models # type: ignore
+            from marker.models import load_all_models  # type: ignore
 
             # Loads Surya (Layout) and Texify (Math OCR) into the PyTorch runtime.
             self._models = load_all_models()
@@ -42,7 +43,7 @@ class MarkerVisionAdapter:
         Returns:
             MarkdownAST: The topological Markdown representation.
         """
-        from marker.convert import convert_single_pdf # type: ignore
+        from marker.convert import convert_single_pdf  # type: ignore
 
         self._load_models_lazily()
 
@@ -51,8 +52,7 @@ class MarkerVisionAdapter:
         # Execute the forward pass.
         # marker-pdf expects a string path and the loaded model pointers.
         full_text, _, out_meta = convert_single_pdf(
-            str(document.file_path),
-            self._models
+            str(document.file_path), self._models
         )
 
         execution_time = time.time() - start_time
@@ -63,6 +63,6 @@ class MarkerVisionAdapter:
             metadata={
                 "engine": "marker-pdf",
                 "execution_time_seconds": f"{execution_time:.2f}",
-                "pages_processed": str(out_meta.get("pages", 0))
-            }
+                "pages_processed": str(out_meta.get("pages", 0)),
+            },
         )

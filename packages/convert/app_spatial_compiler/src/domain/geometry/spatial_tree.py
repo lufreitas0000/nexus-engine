@@ -3,20 +3,29 @@ from collections.abc import Sequence
 from typing import Optional
 from app_spatial_compiler.src.domain.models import SpatialNode
 
-class KDTreeNode:
-    __slots__ = ('node', 'centroid', 'left', 'right')
 
-    def __init__(self, node: SpatialNode, centroid: tuple[float, float], left: Optional['KDTreeNode'], right: Optional['KDTreeNode']):
+class KDTreeNode:
+    __slots__ = ("node", "centroid", "left", "right")
+
+    def __init__(
+        self,
+        node: SpatialNode,
+        centroid: tuple[float, float],
+        left: Optional["KDTreeNode"],
+        right: Optional["KDTreeNode"],
+    ):
         self.node = node
         self.centroid = centroid
         self.left = left
         self.right = right
+
 
 class SpatialKDTree:
     """
     A 2D spatial partition tree mapping the continuous Euclidean manifold
     to discrete topological bounds, enabling O(log N) adjacency queries.
     """
+
     def __init__(self, nodes: Sequence[SpatialNode]):
         self._root = self._build_tree(list(nodes), depth=0)
 
@@ -39,7 +48,7 @@ class SpatialKDTree:
             node=median_node,
             centroid=self._centroid(median_node),
             left=self._build_tree(nodes[:median_idx], depth + 1),
-            right=self._build_tree(nodes[median_idx + 1:], depth + 1)
+            right=self._build_tree(nodes[median_idx + 1 :], depth + 1),
         )
 
     def query_knn(self, target: SpatialNode, k: int) -> list[SpatialNode]:
@@ -68,7 +77,11 @@ class SpatialKDTree:
             axis = depth % 2
             diff = target_centroid[axis] - current.centroid[axis]
 
-            first_branch, second_branch = (current.left, current.right) if diff < 0 else (current.right, current.left)
+            first_branch, second_branch = (
+                (current.left, current.right)
+                if diff < 0
+                else (current.right, current.left)
+            )
 
             _search(first_branch, depth + 1)
 

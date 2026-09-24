@@ -1,6 +1,7 @@
 from pathlib import Path
-from src.services.ast_generation import generate_semantic_ast_node
-from src.adapters.fake_adapter import FakeVisionEncoderAdapter
+from app_vision_encoder.src.services.ast_generation import generate_semantic_ast_node
+from app_vision_encoder.src.adapters.fake_adapter import FakeVisionEncoderAdapter
+
 
 def test_generate_semantic_ast_node_orchestration(tmp_path: Path):
     file_path = tmp_path / "diagram.png"

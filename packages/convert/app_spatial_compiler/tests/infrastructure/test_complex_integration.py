@@ -4,6 +4,7 @@ from app_spatial_compiler.src.infrastructure.cli import app
 
 runner = CliRunner()
 
+
 def test_cli_resolves_complex_table_with_math_and_accents() -> None:
     # All Y shifted above 50
     payload = [
@@ -18,7 +19,7 @@ def test_cli_resolves_complex_table_with_math_and_accents() -> None:
         {"char": "o", "x0": 51, "y0": 100, "x1": 55, "y1": 105},
         {"char": "-", "x0": 10, "y0": 110, "x1": 60, "y1": 111},
         {"char": "M", "x0": 10, "y0": 120, "x1": 15, "y1": 125},
-        {"char": "é", "x0": 16, "y0": 120, "x1": 20, "y1": 125}
+        {"char": "é", "x0": 16, "y0": 120, "x1": 20, "y1": 125},
     ]
     result = runner.invoke(app, [json.dumps(payload)])
     assert result.exit_code == 0

@@ -1,9 +1,15 @@
 from pathlib import Path
 import fitz  # type: ignore
-from src.domain.models import RawDocument, MarkdownAST
-from src.domain.ports import VisionExtractor, SpatialCompiler, SpatialNode, VisionEncoder
-from src.domain.services.topology import PdfTopologyAnalyzer
-from src.domain.services.ast_stitcher import AstStitcher
+from app_structurizer.src.domain.models import RawDocument, MarkdownAST
+from app_structurizer.src.domain.ports import (
+    VisionExtractor,
+    SpatialCompiler,
+    SpatialNode,
+    VisionEncoder,
+)
+from app_structurizer.src.domain.services.topology import PdfTopologyAnalyzer
+from app_structurizer.src.domain.services.ast_stitcher import AstStitcher
+
 
 def extract_document_to_markdown(
     file_path: Path,
@@ -11,7 +17,7 @@ def extract_document_to_markdown(
     vision_extractor: VisionExtractor,
     spatial_compiler: SpatialCompiler,
     vision_encoder: VisionEncoder,
-    output_dir: Path | str = "./output"
+    output_dir: Path | str = "./output",
 ) -> Path:
     """
     Deterministically routes the document extraction based on its physical memory layout.
@@ -20,7 +26,7 @@ def extract_document_to_markdown(
     q_factor = topology_analyzer.analyze(doc)
 
     ast: MarkdownAST
-    
+
     semantic_image_map = {}
 
     if q_factor >= 0.95:
@@ -30,7 +36,7 @@ def extract_document_to_markdown(
     else:
         # For raster documents, we rely on the vision extractor entirely.
         ast = vision_extractor.extract_ast(doc)
-        
+
     # AST Stitching / Filtering Phase
     stitcher = AstStitcher()
     refined_ast = stitcher.stitch_ast(ast, semantic_image_map)
@@ -39,10 +45,13 @@ def extract_document_to_markdown(
     out_path = out_dir / f"{file_path.stem}.md"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path.write_text(refined_ast.content, encoding="utf-8")
-    
+
     return out_path
 
-def _extract_and_encode_images(document: RawDocument, encoder: VisionEncoder) -> dict[str, str]:
+
+def _extract_and_encode_images(
+    document: RawDocument, encoder: VisionEncoder
+) -> dict[str, str]:
     image_semantics = {}
     pdf = fitz.open(str(document.file_path))
     try:
@@ -61,6 +70,7 @@ def _extract_and_encode_images(document: RawDocument, encoder: VisionEncoder) ->
         pdf.close()
 
     return image_semantics
+
 
 def _extract_spatial_graph(document: RawDocument) -> list[SpatialNode]:
     nodes = []

@@ -1,6 +1,7 @@
 from app_spatial_compiler.src.domain.models import SpatialNode
 from app_spatial_compiler.src.domain.geometry.tessellation import recursive_xy_cut
 
+
 def test_recursive_xy_cut_resolves_two_column_manifold() -> None:
     """
     Synthesizes a 2D Euclidean manifold representing a two-column layout.
@@ -26,6 +27,7 @@ def test_recursive_xy_cut_resolves_two_column_manifold() -> None:
     # Assert the strict 1D topological reading order
     ordered_chars = [n.char for n in ordered_nodes]
     assert ordered_chars == ["A", "B", "C", "D"]
+
 
 def test_recursive_xy_cut_preserves_single_column_topology() -> None:
     """

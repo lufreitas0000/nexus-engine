@@ -5,6 +5,7 @@ from pathlib import Path
 # We expect this import to fail initially (TDD)
 from app_orchestrator.pipeline import PipelineOrchestrator
 
+
 def test_orchestrator_sequence_execution():
     # Arrange
     mock_extractor = MagicMock(return_value="extracted_manifold_data")
@@ -12,9 +13,7 @@ def test_orchestrator_sequence_execution():
     mock_vision = MagicMock(return_value="final_resolved_ast")
 
     orchestrator = PipelineOrchestrator(
-        extractor_fn=mock_extractor,
-        spatial_fn=mock_spatial,
-        vision_fn=mock_vision
+        extractor_fn=mock_extractor, spatial_fn=mock_spatial, vision_fn=mock_vision
     )
 
     test_pdf_path = Path("dummy.pdf")

@@ -4,9 +4,11 @@ from pylatexenc.latexencode import unicode_to_latex  # type: ignore
 from app_spatial_compiler.src.domain.models import SpatialNode
 from app_spatial_compiler.src.domain.geometry.spatial_tree import SpatialKDTree
 
+
 class MathTopologyResolver:
     def _get_ref_height(self, nodes: Sequence[SpatialNode]) -> float:
-        if not nodes: return 12.0
+        if not nodes:
+            return 12.0
         vals = [n.font_size if n.font_size else n.height for n in nodes]
         return float(statistics.median(vals))
 
@@ -14,7 +16,8 @@ class MathTopologyResolver:
         return unicode_to_latex(char)
 
     def resolve_manifold(self, nodes: Sequence[SpatialNode]) -> str:
-        if not nodes: return ""
+        if not nodes:
+            return ""
         ref_h = self._get_ref_height(nodes)
 
         # 1. Fraction Resolution
@@ -33,7 +36,8 @@ class MathTopologyResolver:
         processed: set[int] = set()
 
         for node in sorted_nodes:
-            if id(node) in processed: continue
+            if id(node) in processed:
+                continue
 
             # Adjacency query
             neighbors = tree.query_knn(node, k=5)
@@ -44,9 +48,11 @@ class MathTopologyResolver:
             right_super = []
             right_sub = []
             for n in neighbors:
-                if id(n) in processed: continue
+                if id(n) in processed:
+                    continue
                 # Tighten contiguity for superscripts
-                if (n.x0 - node.x1) > ref_h * 0.4: continue
+                if (n.x0 - node.x1) > ref_h * 0.4:
+                    continue
 
                 # Use centroid-based elevation for more robust sub/super detection
                 if n.centroid[1] < node.y0 + (ref_h * 0.2):
@@ -56,9 +62,11 @@ class MathTopologyResolver:
 
             if right_super:
                 buffer += f"^{{{''.join(self._to_latex(n.char) for n in sorted(right_super, key=lambda n: n.x0))}}}"
-                for n in right_super: processed.add(id(n))
+                for n in right_super:
+                    processed.add(id(n))
             if right_sub:
                 buffer += f"_{{{''.join(self._to_latex(n.char) for n in sorted(right_sub, key=lambda n: n.x0))}}}"
-                for n in right_sub: processed.add(id(n))
+                for n in right_sub:
+                    processed.add(id(n))
 
         return buffer

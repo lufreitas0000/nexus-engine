@@ -1,6 +1,7 @@
 from app_spatial_compiler.src.domain.models import SpatialNode
 from app_spatial_compiler.src.domain.geometry.spatial_tree import SpatialKDTree
 
+
 def test_kdtree_constructs_and_queries_nearest_neighbors() -> None:
     """
     Instantiates a contiguous array of SpatialNode entities and constructs

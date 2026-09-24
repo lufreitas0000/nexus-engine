@@ -3,6 +3,7 @@ import multiprocessing
 from typing import Any
 from app_structurizer.src.concurrency.manager import ConcurrencyManager
 
+
 def dummy_process(path: str, semaphore: Any) -> str:
     """Dummy processing function for tests."""
     # Simulate work
@@ -13,6 +14,7 @@ def dummy_process(path: str, semaphore: Any) -> str:
         time.sleep(0.2)
 
     return f"Processed: {path}"
+
 
 def test_parallel_execution_returns_results():
     with ConcurrencyManager(max_workers=2, vram_lock_count=1) as manager:
@@ -57,4 +59,4 @@ def test_semaphore_limits_concurrency():
         # Since they run in parallel and hold the lock for 0.5s,
         # some will fail to acquire the lock since blocking=False.
         assert acquired_count < 4
-        assert acquired_count >= 1 # At least one should acquire it
+        assert acquired_count >= 1  # At least one should acquire it

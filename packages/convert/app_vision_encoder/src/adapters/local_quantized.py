@@ -1,11 +1,16 @@
 from typing import Any, Optional
-from src.domain.models import PhysicalImageReference, SemanticDescription
-from src.domain.ports import VisionEncoderPort
+from app_vision_encoder.src.domain.models import (
+    PhysicalImageReference,
+    SemanticDescription,
+)
+from app_vision_encoder.src.domain.ports import VisionEncoderPort
+
 
 class LocalQuantizedAdapter:
     """
     Satisfies VisionEncoderPort utilizing local 4-bit quantized VRAM allocation.
     """
+
     def __init__(self, model_id: str = "llava-hf/llava-1.5-7b-hf"):
         self._model_id = model_id
         self._processor: Optional[Any] = None
@@ -14,19 +19,22 @@ class LocalQuantizedAdapter:
     def _load_models_lazily(self) -> None:
         if self._model is None:
             import torch
-            from transformers import AutoProcessor, LlavaForConditionalGeneration, BitsAndBytesConfig
+            from transformers import (
+                AutoProcessor,
+                LlavaForConditionalGeneration,
+                BitsAndBytesConfig,
+            )
 
             # Explicitly suppress mypy on untyped library functions
             quantization_config = BitsAndBytesConfig(  # type: ignore[no-untyped-call]
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16
+                load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16
             )
 
             self._processor = AutoProcessor.from_pretrained(self._model_id)  # type: ignore[no-untyped-call]
             self._model = LlavaForConditionalGeneration.from_pretrained(
                 self._model_id,
                 quantization_config=quantization_config,
-                device_map="auto"
+                device_map="auto",
             )
 
     def encode_manifold(self, image: PhysicalImageReference) -> SemanticDescription:
@@ -37,10 +45,10 @@ class LocalQuantizedAdapter:
         raw_image = Image.open(image.file_path).convert("RGB")
         prompt = "USER: <image>\nProvide a concise academic description of this image.\nASSISTANT:"
 
-        inputs = self._processor(prompt, raw_image, return_tensors='pt').to("cuda") # type: ignore
-        output_tensor = self._model.generate(**inputs, max_new_tokens=200) # type: ignore
+        inputs = self._processor(prompt, raw_image, return_tensors="pt").to("cuda")  # type: ignore
+        output_tensor = self._model.generate(**inputs, max_new_tokens=200)  # type: ignore
 
-        decoded_output = self._processor.decode(output_tensor[0], skip_special_tokens=True) # type: ignore
+        decoded_output = self._processor.decode(output_tensor[0], skip_special_tokens=True)  # type: ignore
         semantic_content = decoded_output.split("ASSISTANT:")[-1].strip()
 
         return SemanticDescription(
@@ -48,6 +56,6 @@ class LocalQuantizedAdapter:
             metadata={
                 "engine": "LocalQuantizedAdapter",
                 "quantization": "4-bit",
-                "model_id": self._model_id
-            }
+                "model_id": self._model_id,
+            },
         )

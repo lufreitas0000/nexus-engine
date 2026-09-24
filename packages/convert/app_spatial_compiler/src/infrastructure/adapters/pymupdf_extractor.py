@@ -2,6 +2,7 @@ import json
 import fitz  # type: ignore
 from app_spatial_compiler.src.domain.models import BookmarkNode, DocumentStructure
 
+
 class PyMuPDFMetadataAdapter:
     """
     Adapter to extract metadata and structure using PyMuPDF (fitz).
@@ -27,14 +28,11 @@ class PyMuPDFMetadataAdapter:
                 # Check if there is a destination name
                 dest_name = None
                 if len(item) > 3 and isinstance(item[3], dict):
-                    dest_name = item[3].get('name')
+                    dest_name = item[3].get("name")
 
                 bookmarks.append(
                     BookmarkNode(
-                        level=level,
-                        title=title,
-                        page=page,
-                        dest_name=dest_name
+                        level=level, title=title, page=page, dest_name=dest_name
                     )
                 )
 
@@ -56,7 +54,7 @@ class PyMuPDFMetadataAdapter:
                     "level": b.level,
                     "title": b.title,
                     "page": b.page,
-                    "dest_name": b.dest_name
+                    "dest_name": b.dest_name,
                 }
                 for b in structure.bookmarks
             ]

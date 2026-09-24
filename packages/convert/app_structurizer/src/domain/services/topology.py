@@ -6,7 +6,8 @@ Classifies the memory layout using Shannon Entropy H(X) bounds on the discrete t
 import math
 from collections import Counter
 import fitz  # type: ignore
-from src.domain.models import RawDocument
+from app_structurizer.src.domain.models import RawDocument
+
 
 class PdfTopologyAnalyzer:
     """

@@ -1,6 +1,7 @@
 from pathlib import Path
-from src.adapters.fake_adapter import FakeVisionEncoderAdapter
-from src.domain.models import PhysicalImageReference
+from app_vision_encoder.src.adapters.fake_adapter import FakeVisionEncoderAdapter
+from app_vision_encoder.src.domain.models import PhysicalImageReference
+
 
 def test_fake_adapter_returns_semantic_description(tmp_path: Path):
     file_path = tmp_path / "test_diagram.png"

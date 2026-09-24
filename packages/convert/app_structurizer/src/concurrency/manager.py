@@ -2,6 +2,7 @@ import concurrent.futures
 import multiprocessing
 from typing import List, Callable, Any, Iterable
 
+
 class ConcurrencyManager:
     def __init__(self, max_workers: int = 4, vram_lock_count: int = 1):
         """
@@ -26,7 +27,9 @@ class ConcurrencyManager:
         """Shuts down the multiprocessing Manager to free resources."""
         self.manager.shutdown()
 
-    def process_pdfs_in_parallel(self, pdf_paths: List[str], process_func: Callable[[str, Any], Any]) -> List[Any]:
+    def process_pdfs_in_parallel(
+        self, pdf_paths: List[str], process_func: Callable[[str, Any], Any]
+    ) -> List[Any]:
         """
         Processes a list of PDF file paths in parallel using a process pool.
 
@@ -40,7 +43,9 @@ class ConcurrencyManager:
             A list of results corresponding to the input pdf_paths.
         """
         results = []
-        with concurrent.futures.ProcessPoolExecutor(max_workers=self.max_workers) as executor:
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=self.max_workers
+        ) as executor:
             # We pass both the item and the shared semaphore to the processing function.
             # We map the inputs and zip them with the semaphore.
             futures = [

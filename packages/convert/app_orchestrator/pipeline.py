@@ -1,17 +1,19 @@
 from typing import Callable, Any
 from pathlib import Path
 
+
 class PipelineOrchestrator:
     """
     Coordinates the execution flow of the semantic PDF pipeline components.
     It sequentially calls the extractor (router/structurizer), spatial compiler,
     and vision encoder, acting purely as an integration point above bounded contexts.
     """
+
     def __init__(
         self,
         extractor_fn: Callable[[Path], Any],
         spatial_fn: Callable[[Any], Any],
-        vision_fn: Callable[[Any], Any]
+        vision_fn: Callable[[Any], Any],
     ):
         self.extractor_fn = extractor_fn
         self.spatial_fn = spatial_fn

@@ -1,16 +1,21 @@
 from typer.testing import CliRunner
 from pathlib import Path
-from src.cli import app
+from app_structurizer.src.cli import app
 
 runner = CliRunner()
 
+
 def test_cli_extract_with_fake(degraded_raster_book_path: Path, tmp_path: Path) -> None:
-    result = runner.invoke(app, [
-        "extract",
-        str(degraded_raster_book_path),
-        "--output-dir", str(tmp_path),
-        "--use-fake"
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "extract",
+            str(degraded_raster_book_path),
+            "--output-dir",
+            str(tmp_path),
+            "--use-fake",
+        ],
+    )
 
     assert result.exit_code == 0
     assert "Using deterministic FakeVisionExtractor" in result.stdout
@@ -21,9 +26,10 @@ def test_cli_extract_with_fake(degraded_raster_book_path: Path, tmp_path: Path) 
     content = expected_out_file.read_text(encoding="utf-8")
     assert "Mocked extraction" in content
 
+
 def test_cli_fails_gracefully_on_missing_file(tmp_path: Path) -> None:
-    result = runner.invoke(app, [
-        "extract", "does_not_exist.pdf", "--output-dir", str(tmp_path)
-    ])
+    result = runner.invoke(
+        app, ["extract", "does_not_exist.pdf", "--output-dir", str(tmp_path)]
+    )
     assert result.exit_code == 1
     assert "Error: File not found" in result.stdout

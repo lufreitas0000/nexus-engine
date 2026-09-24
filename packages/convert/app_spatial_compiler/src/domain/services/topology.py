@@ -4,8 +4,15 @@ from pylatexenc.latexencode import unicode_to_latex  # type: ignore
 from app_spatial_compiler.src.domain.models import SpatialNode, MarkdownAST
 from app_spatial_compiler.src.domain.geometry.tessellation import recursive_xy_cut
 
+
 class GeometricParser:
-    def __init__(self, epsilon_font: float = 2.0, space_threshold: float = 1.5, min_dx: float = 10.0, min_dy: float = 5.0):
+    def __init__(
+        self,
+        epsilon_font: float = 2.0,
+        space_threshold: float = 1.5,
+        min_dx: float = 10.0,
+        min_dy: float = 5.0,
+    ):
         self.epsilon_font = epsilon_font
         self.space_threshold = space_threshold
         self.min_dx = min_dx
@@ -33,10 +40,12 @@ class GeometricParser:
             line_sorted = sorted(line, key=lambda n: n.x0)
             line_str = ""
             for i, node in enumerate(line_sorted):
-                if i > 0 and (node.x0 - line_sorted[i-1].x1) > self.space_threshold:
+                if i > 0 and (node.x0 - line_sorted[i - 1].x1) > self.space_threshold:
                     line_str += " "
                 # Apply LaTeX encoding to all text nodes
                 line_str += unicode_to_latex(node.char)
             buffer.append(line_str)
 
-        return MarkdownAST(content="\n".join(buffer), metadata={"lines": str(len(lines))})
+        return MarkdownAST(
+            content="\n".join(buffer), metadata={"lines": str(len(lines))}
+        )

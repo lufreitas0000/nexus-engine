@@ -1,6 +1,10 @@
 import pytest
 from app_spatial_compiler.src.domain.models import SpatialNode
-from app_spatial_compiler.src.application.use_cases.markdown_synthesis import MarkdownSynthesizer, StructuralDispatcher
+from app_spatial_compiler.src.application.use_cases.markdown_synthesis import (
+    MarkdownSynthesizer,
+    StructuralDispatcher,
+)
+
 
 def test_markdown_synthesizer_basic_block():
     nodes = [
@@ -11,6 +15,7 @@ def test_markdown_synthesizer_basic_block():
     synth = MarkdownSynthesizer(median_width=5.0, median_height=10.0)
     result = synth.synthesize_text(nodes)
     assert result == "A B"
+
 
 def test_structural_dispatcher_detects_header():
     # Regular block

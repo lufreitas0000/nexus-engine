@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from app_spatial_compiler.src.domain.models import SpatialNode
 
+
 class MarkdownSynthesizer:
     def __init__(self, median_width: float, median_height: float):
         self.median_width = median_width
@@ -30,6 +31,7 @@ class MarkdownSynthesizer:
 
         return text.strip()
 
+
 class StructuralDispatcher:
     def __init__(self, synthesizer: MarkdownSynthesizer):
         self.synthesizer = synthesizer
@@ -44,7 +46,9 @@ class StructuralDispatcher:
             if not text:
                 continue
 
-            avg_font = sum(n.font_size for n in block if n.font_size) / max(len(block), 1)
+            avg_font = sum(n.font_size for n in block if n.font_size) / max(
+                len(block), 1
+            )
             is_header = avg_font > self.synthesizer.median_height * 1.3
 
             if is_header and "\n" not in text:
@@ -55,6 +59,8 @@ class StructuralDispatcher:
                     # ensure proper md formatting for multi-line list items
                     md_blocks.append(text)
                 else:
-                    md_blocks.append(text.replace("\n", " ")) # naive unwrap for standard text
+                    md_blocks.append(
+                        text.replace("\n", " ")
+                    )  # naive unwrap for standard text
 
         return "\n\n".join(md_blocks)

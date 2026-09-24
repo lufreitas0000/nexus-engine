@@ -3,12 +3,16 @@ import re
 from collections.abc import Sequence
 from app_spatial_compiler.src.domain.models import SpatialNode, BlockType
 
+
 class BlockClassifier:
     """
     Classifies 2D manifolds into semantic types using typographic
     ratios and character invariants.
     """
-    def classify(self, nodes: Sequence[SpatialNode], page_median_h: float) -> tuple[BlockType, int]:
+
+    def classify(
+        self, nodes: Sequence[SpatialNode], page_median_h: float
+    ) -> tuple[BlockType, int]:
         if not nodes:
             return BlockType.TEXT, 0
 
@@ -19,7 +23,9 @@ class BlockClassifier:
             return BlockType.MATH, 0
 
         # 2. Header Detection (H1 vs H2)
-        block_median_h = statistics.median(n.font_size if n.font_size else n.height for n in nodes)
+        block_median_h = statistics.median(
+            n.font_size if n.font_size else n.height for n in nodes
+        )
         if block_median_h > page_median_h * 1.5:
             return BlockType.HEADER, 1
         if block_median_h > page_median_h * 1.2:

@@ -2,12 +2,12 @@
 Validation suite ensuring Domain logic and Ports function independently of ML frameworks.
 """
 
-from src.domain.models import RawDocument
-from src.domain.ports import VisionExtractor
+from app_structurizer.src.domain.models import RawDocument
+from app_structurizer.src.domain.ports import VisionExtractor
+
 
 def test_fake_extractor_satisfies_protocol(
-    fake_extractor: VisionExtractor,
-    raw_document: RawDocument
+    fake_extractor: VisionExtractor, raw_document: RawDocument
 ) -> None:
     """
     Validates that our Fake object structurally satisfies the VisionExtractor Protocol

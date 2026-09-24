@@ -1,6 +1,7 @@
 import pytest
-from src.domain.models import MarkdownAST
-from src.domain.services.ast_stitcher import AstStitcher
+from app_structurizer.src.domain.models import MarkdownAST
+from app_structurizer.src.domain.services.ast_stitcher import AstStitcher
+
 
 def test_ast_stitcher_strips_images_preserves_captions():
     # Setup the initial state
@@ -14,7 +15,10 @@ def test_ast_stitcher_strips_images_preserves_captions():
     # Assert the deterministic topological change
     assert "[ALT Text] Graph 1" in refined_ast.content
     assert "data:image/png" not in refined_ast.content
-    assert "[Google](http://google.com)" in refined_ast.content # Links remain untouched
+    assert (
+        "[Google](http://google.com)" in refined_ast.content
+    )  # Links remain untouched
+
 
 def test_ast_stitcher_injects_semantic_text():
     # Setup the initial state with a matched xref
@@ -30,6 +34,7 @@ def test_ast_stitcher_injects_semantic_text():
     # Assert replacement includes semantic text
     assert "[ALT Text] Data Chart - A bar chart showing sales." in refined_ast.content
 
+
 def test_ast_stitcher_injects_semantic_text_no_caption():
     # Setup the initial state with no caption
     raw_content = "![](xref_456.jpg)"
@@ -43,6 +48,7 @@ def test_ast_stitcher_injects_semantic_text_no_caption():
 
     # Assert replacement includes semantic text only
     assert "[ALT Text] A photograph of a cat." in refined_ast.content
+
 
 def test_ast_stitcher_no_caption_no_semantics():
     # Setup the initial state with no caption and no matched semantics

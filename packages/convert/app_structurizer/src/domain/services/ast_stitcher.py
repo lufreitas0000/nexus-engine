@@ -1,5 +1,6 @@
 import re
-from src.domain.models import MarkdownAST
+from app_structurizer.src.domain.models import MarkdownAST
+
 
 class AstStitcher:
     """
@@ -11,13 +12,16 @@ class AstStitcher:
     # Regex to capture Markdown image syntax: ![caption](url/path/base64)
     # Group 1 captures the caption.
     # Group 2 captures the URL/path, which we might need to match with xref semantics.
-    IMAGE_PATTERN = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
+    IMAGE_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 
-    def stitch_ast(self, ast: MarkdownAST, image_semantics: dict[str, str]) -> MarkdownAST:
+    def stitch_ast(
+        self, ast: MarkdownAST, image_semantics: dict[str, str]
+    ) -> MarkdownAST:
         """
         Executes the mapping function over the AST string buffer, replacing
         image tags with their extracted ALT texts.
         """
+
         def replacement(match):
             caption = match.group(1)
             url = match.group(2)
@@ -37,13 +41,14 @@ class AstStitcher:
                     break
 
             if semantic_text:
-                return f"[ALT Text] {caption} - {semantic_text}" if caption else f"[ALT Text] {semantic_text}"
+                return (
+                    f"[ALT Text] {caption} - {semantic_text}"
+                    if caption
+                    else f"[ALT Text] {semantic_text}"
+                )
             else:
                 return f"[ALT Text] {caption}" if caption else "[ALT Text]"
 
         filtered_content = self.IMAGE_PATTERN.sub(replacement, ast.content)
 
-        return MarkdownAST(
-            content=filtered_content,
-            metadata=ast.metadata
-        )
+        return MarkdownAST(content=filtered_content, metadata=ast.metadata)

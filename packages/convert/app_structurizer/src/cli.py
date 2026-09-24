@@ -9,15 +9,22 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 
-from src.services.extraction import extract_document_to_markdown
-from src.domain.ports import VisionExtractor, SpatialCompiler, VisionEncoder
-from src.domain.services.topology import PdfTopologyAnalyzer
-from src.domain.models import MarkdownAST
+from app_structurizer.src.services.extraction import extract_document_to_markdown
+from app_structurizer.src.domain.ports import (
+    VisionExtractor,
+    SpatialCompiler,
+    VisionEncoder,
+)
+from app_structurizer.src.domain.services.topology import PdfTopologyAnalyzer
+from app_structurizer.src.domain.models import MarkdownAST
 
-from src.domain.models import MarkdownAST
+from app_structurizer.src.domain.models import MarkdownAST
 
-app = typer.Typer(help="Semantic PDF Structurizer: Map continuous PDF tensors to discrete Markdown ASTs.")
+app = typer.Typer(
+    help="Semantic PDF Structurizer: Map continuous PDF tensors to discrete Markdown ASTs."
+)
 console = Console()
+
 
 @app.callback()
 def callback():
@@ -27,32 +34,51 @@ def callback():
     """
     pass
 
+
 def _get_hardware_info() -> str:
     """Probes the local system for hardware accelerators via PyTorch."""
     try:
-        import torch # type: ignore
+        import torch  # type: ignore
+
         if torch.cuda.is_available():
             return f"[green]NVIDIA GPU (CUDA) - {torch.cuda.get_device_name(0)}[/green]"
         return "[yellow]CPU (Standard RAM)[/yellow]"
     except ImportError:
         return "[red]Unknown (PyTorch not installed)[/red]"
 
+
 class FakeSpatialCompiler(SpatialCompiler):
     def compile_graph(self, nodes) -> MarkdownAST:
         return MarkdownAST(content="# Fake Spatial Compiler AST", metadata={})
+
 
 class FakeVisionEncoder(VisionEncoder):
     def encode_tensor(self, image_bytes: bytes) -> str:
         return "[ALT Text] Mock"
 
+
 @app.command()
 def extract(
     file_path: Path = typer.Argument(..., help="Path to the binary PDF tensor."),
-    output_dir: Path = typer.Option(Path("./output"), "--output-dir", "-o", help="Directory to flush the Markdown AST."),
-    use_fake: bool = typer.Option(False, "--use-fake", help="Bypass ML inference and use the deterministic Fake adapter.")
+    output_dir: Path = typer.Option(
+        Path("./output"),
+        "--output-dir",
+        "-o",
+        help="Directory to flush the Markdown AST.",
+    ),
+    use_fake: bool = typer.Option(
+        False,
+        "--use-fake",
+        help="Bypass ML inference and use the deterministic Fake adapter.",
+    ),
 ):
     """Executes the extraction pipeline on a target PDF."""
-    console.print(Panel(f"Target: [cyan]{file_path}[/cyan]\nOutput: [cyan]{output_dir}[/cyan]", title="Structurizer Engine"))
+    console.print(
+        Panel(
+            f"Target: [cyan]{file_path}[/cyan]\nOutput: [cyan]{output_dir}[/cyan]",
+            title="Structurizer Engine",
+        )
+    )
 
     if not file_path.exists():
         console.print(f"[bold red]Error:[/bold red] File not found at {file_path}")
@@ -60,20 +86,26 @@ def extract(
 
     extractor: VisionExtractor
     if use_fake:
-        console.print("[yellow]Warning: Using deterministic FakeVisionExtractor. Bypassing PyTorch.[/yellow]")
-        from tests.conftest import FakeVisionExtractor
+        console.print(
+            "[yellow]Warning: Using deterministic FakeVisionExtractor. Bypassing PyTorch.[/yellow]"
+        )
+        from app_structurizer.tests.conftest import FakeVisionExtractor
+
         extractor = FakeVisionExtractor()
     else:
         hardware = _get_hardware_info()
         console.print(f"Hardware Probed: {hardware}")
         console.print("[dim]Lazy-loading PyTorch weights into memory...[/dim]")
 
-        from src.adapters.marker_adapter import MarkerVisionAdapter
+        from app_structurizer.src.adapters.marker_adapter import MarkerVisionAdapter
+
         extractor = MarkerVisionAdapter()
         console.print("[green]ML Adapters Loaded.[/green]")
 
     try:
-        console.print("[dim]Initiating mathematical mapping (Continuous -> Discrete)...[/dim]")
+        console.print(
+            "[dim]Initiating mathematical mapping (Continuous -> Discrete)...[/dim]"
+        )
         # Provide real analyzer and fake secondary adapters as fallback for CLI when incomplete
         topology_analyzer = PdfTopologyAnalyzer()
         spatial_compiler = FakeSpatialCompiler()
@@ -85,12 +117,15 @@ def extract(
             vision_extractor=extractor,
             spatial_compiler=spatial_compiler,
             vision_encoder=vision_encoder,
-            output_dir=output_dir
+            output_dir=output_dir,
         )
-        console.print(f"\n[bold green]Success![/bold green] AST flushed to: [cyan]{out_file}[/cyan]")
+        console.print(
+            f"\n[bold green]Success![/bold green] AST flushed to: [cyan]{out_file}[/cyan]"
+        )
     except Exception as e:
         console.print(f"[bold red]Fatal Error:[/bold red] {str(e)}")
         raise typer.Exit(code=1)
+
 
 if __name__ == "__main__":
     app()
