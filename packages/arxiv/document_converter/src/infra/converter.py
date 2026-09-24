@@ -173,7 +173,7 @@ class LatexToMarkdownConverter:
                         # Spliter creates the file. We need to prepend the frontmatter.
                         with open(output_path, "r", encoding="utf-8", errors="ignore") as f:
                             content_str = f.read()
-                        
+
                         from nexus_schema import markdown_to_document
                         # Convert markdown_content to AST
                         doc = markdown_to_document(content_str)

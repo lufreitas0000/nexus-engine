@@ -26,7 +26,7 @@ def convert_ast_to_epub(
 
     with open(input_file, "r", encoding="utf-8") as file_descriptor:
         doc_json = json.load(file_descriptor)
-        
+
     doc = Document.model_validate(doc_json)
     source_content = document_to_markdown(doc)
 
