@@ -35,3 +35,11 @@ class VisionEncoder(Protocol):
     Generates ALT text.
     """
     def encode_tensor(self, image_bytes: bytes) -> str: ...
+
+from abc import ABC, abstractmethod
+from .models import PageComplexityMetrics
+
+class PageAnalyzerPort(ABC):
+    @abstractmethod
+    def extract_metrics(self, document_path: str, page_number: int) -> PageComplexityMetrics:
+        pass

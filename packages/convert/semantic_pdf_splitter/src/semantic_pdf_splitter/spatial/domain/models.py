@@ -39,3 +39,20 @@ class SpatialNode:
 class MarkdownAST:
     content: str
     metadata: dict[str, str]
+
+from typing import List, Tuple, Optional, Dict, Any
+from dataclasses import field
+
+@dataclass
+class TextSegment:
+    text: str
+    page_number: int
+    bounding_box: Tuple[float, float, float, float]
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    embedding: Optional[List[float]] = None
+
+@dataclass
+class SemanticChunk:
+    segments: List[TextSegment]
+    average_embedding: List[float]
+    aggregated_metadata: Dict[str, Any] = field(default_factory=dict)

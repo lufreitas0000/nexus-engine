@@ -1,0 +1,53 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black mypy pytest pytest-cov
+        pip install -r requirements.txt
+
+    - name: Run Black (Formatting Check)
+      run: black --check semantic_pdf_splitter/src semantic_pdf_splitter/tests
+
+    - name: Run Flake8 (Linting)
+      run: flake8 semantic_pdf_splitter/src semantic_pdf_splitter/tests
+
+    - name: Run Mypy (Static Types)
+      run: make lint
+
+    - name: Run Pytest
+      run: export PYTHONPATH=$(pwd)/semantic_pdf_splitter/src && pytest semantic_pdf_splitter/tests/ -v
+
+  docker-build-verify:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Validate Docker Compose Config
+      run: docker compose config
+
+    - name: Test CPU Build Reproducibility
+      run: make docker-build-cpu

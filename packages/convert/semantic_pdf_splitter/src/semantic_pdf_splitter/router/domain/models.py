@@ -28,3 +28,23 @@ class MarkdownAST:
     """
     content: str
     metadata: dict[str, str]
+
+from enum import Enum
+
+class RouteTarget(Enum):
+    FAST_TEXT = "FAST_TEXT"
+    VLM_COMPLEX = "VLM_COMPLEX"
+
+@dataclass
+class PageComplexityMetrics:
+    page_number: int
+    image_area_ratio: float
+    table_count: int
+    equation_count: int
+    text_density: float
+
+@dataclass
+class RoutingDecision:
+    page_number: int
+    target: RouteTarget
+    reason: str

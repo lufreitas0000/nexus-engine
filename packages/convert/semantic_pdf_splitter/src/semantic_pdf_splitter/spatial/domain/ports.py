@@ -14,3 +14,11 @@ class SpatialCompilerPort(Protocol):
 class EquationFallbackPort(Protocol):
     """Protocol for delegating complex topological failures to an ML adapter."""
     def resolve_subgraph(self, bounds: tuple[float, float, float, float]) -> str: ...
+
+from abc import ABC, abstractmethod
+from typing import List
+
+class EmbeddingProvider(ABC):
+    @abstractmethod
+    def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+        pass
