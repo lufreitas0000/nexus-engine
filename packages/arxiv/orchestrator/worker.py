@@ -247,8 +247,14 @@ async def shutdown(ctx):
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_settings = RedisSettings.from_dsn(redis_url)
 
+from orchestrator.scheduler import run_daily_literature_review
+from arq import cron
+
 class WorkerSettings:
     functions = [process_query_task, process_ingestion_task, process_remote_task]
     redis_settings = redis_settings
     on_startup = startup
     on_shutdown = shutdown
+    cron_jobs = [
+        cron(run_daily_literature_review, hour=2, minute=0)
+    ]

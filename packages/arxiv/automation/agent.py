@@ -1,7 +1,7 @@
 import asyncio
 from google.antigravity import LocalAgentConfig, CapabilitiesConfig
 from google.antigravity.utils.interactive import run_interactive_loop
-from google.antigravity.execution import execute_agent_stateless
+from google.antigravity import Agent
 
 from automation.tools import push_arxiv_query, read_dlq, check_completed_graphs
 from automation.tools_obsidian import export_graph_to_obsidian
@@ -10,14 +10,16 @@ from automation.sub_agents import get_math_extraction_agent, get_literature_agen
 async def delegate_to_math_agent(text_payload: str) -> str:
     """Delegates mathematical derivation extraction to the specialized Math Sub-Agent."""
     config = get_math_extraction_agent()
-    result = await execute_agent_stateless(config, prompt=text_payload)
-    return result.text
+    async with Agent(config=config, name="ExtractionAgent") as agent:
+        result = await agent.chat(text_payload)
+        return result.text
 
 async def delegate_to_literature_agent(text_payload: str) -> str:
     """Delegates bibliographical verification to the specialized Literature Sub-Agent."""
     config = get_literature_agent()
-    result = await execute_agent_stateless(config, prompt=text_payload)
-    return result.text
+    async with Agent(config=config, name="LiteratureAgent") as agent:
+        result = await agent.chat(text_payload)
+        return result.text
 
 async def main():
     system_instructions = (
