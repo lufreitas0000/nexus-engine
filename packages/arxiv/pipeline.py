@@ -5,12 +5,12 @@ import os
 from typing import Annotated
 
 from common.logging import setup_logging, get_logger
-from research_graph.adapters.external_apis import ArxivAdapter
-from ingestion_engine.adapters.downloader import ArxivDownloader
-from document_processor.adapters.processor import ArchiveProcessor
-from document_converter.adapters.converter import LatexToMarkdownConverter
-from research_graph.domain.model import PaperMetadata
-from orchestrator.queue import BackgroundQueue
+from research_graph.src.infra.external_apis import ArxivAdapter
+from ingestion_engine.src.infra.downloader import ArxivDownloader
+from document_processor.src.infra.processor import ArchiveProcessor
+from document_converter.src.infra.converter import LatexToMarkdownConverter
+from research_graph.src.domain.model import PaperMetadata
+from orchestrator.src.infra.queue import BackgroundQueue
 
 logger = get_logger(__name__)
 setup_logging()

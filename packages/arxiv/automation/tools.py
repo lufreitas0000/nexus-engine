@@ -2,7 +2,7 @@ import json
 import redis.asyncio as redis
 from arq import create_pool
 from arq.connections import RedisSettings
-from ingestion_engine.domain.model import IngestionTask, TaskType
+from ingestion_engine.src.domain.model import IngestionTask, TaskType
 
 async def push_arxiv_query(arxiv_id: str) -> str:
     """Push an arXiv ID into the local pipeline orchestrator queue."""
