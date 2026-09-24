@@ -46,7 +46,7 @@ export SURYA_INFERENCE_URL="http://127.0.0.1:8000/v1"
 export SURYA_INFERENCE_AUTOSTART="False"
 export CUDA_VISIBLE_DEVICES="0"
 
-poetry run python src/main.py run-pipeline "$@" 2>&1 | tee -a "$LOG_FILE"
+poetry run python -m book_studio.main run-pipeline "$@" 2>&1 | tee -a "$LOG_FILE"
 EXIT_CODE=$?
 
 if [ "$EXIT_CODE" = "137" ]; then

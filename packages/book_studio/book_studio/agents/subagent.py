@@ -1,6 +1,6 @@
 from typing import List
 import os
-from src.core.schemas import Page, Block
+from book_studio.core.schemas import Page, Block
 
 class VerificationSubagent:
     def __init__(self, api_base: str, api_key: str):

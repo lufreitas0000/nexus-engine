@@ -6,7 +6,7 @@ import fitz  # PyMuPDF
 from pathlib import Path
 from pypdf import PdfReader, PdfWriter
 from abc import ABC, abstractmethod
-from src.core.schemas import ExtractionResult, Page
+from book_studio.core.schemas import ExtractionResult, Page
 
 class BaseExtractor(ABC):
     @abstractmethod

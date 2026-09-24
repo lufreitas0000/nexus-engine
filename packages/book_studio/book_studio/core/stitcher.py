@@ -1,6 +1,6 @@
 import re
 from typing import List
-from src.core.schemas import ExtractionResult, Block, Page
+from book_studio.core.schemas import ExtractionResult, Block, Page
 
 class CrossPageStitcher:
     """Deterministically stitches broken paragraphs and math environments across pages."""

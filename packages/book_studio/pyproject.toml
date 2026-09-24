@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "book_studio"
 version = "0.1.0"
@@ -5,8 +9,16 @@ description = "book_studio package"
 requires-python = ">=3.12"
 dependencies = [
     "nexus-schema",
+    "pypdf>=3.0.0",
     "nexus-workspace",
+    "pytest-mock>=3.12.0",
+    "click>=8.0.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",
 ]
+
+[tool.setuptools]
+packages = ["book_studio"]
 
 [tool.uv.sources]
 nexus-schema = { workspace = true }

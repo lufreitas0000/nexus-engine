@@ -1,6 +1,6 @@
 from typing import List
-from src.core.schemas import ExtractionResult, Page
-from src.agents.subagent import VerificationSubagent
+from book_studio.core.schemas import ExtractionResult, Page
+from book_studio.agents.subagent import VerificationSubagent
 
 class AgentOrchestrator:
     def __init__(self, api_key: str = "sk-placeholder", api_base: str = "http://127.0.0.1:8000/v1"):

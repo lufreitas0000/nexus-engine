@@ -1,7 +1,7 @@
 import re
 import shutil
 from pathlib import Path
-from src.core.schemas import ExtractionResult
+from book_studio.core.schemas import ExtractionResult
 
 class AssetManager:
     """Routes physical image files to the assets directory and injects structured placeholders."""

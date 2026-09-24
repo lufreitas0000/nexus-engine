@@ -43,9 +43,9 @@ elif [ -f "env/bin/activate" ]; then
 fi
 
 # Run pipeline via main.py
-python3 src/main.py run-pipeline "$BOOK_YAML" $EXTRA_ARGS
+python3 -m book_studio.main run-pipeline "$BOOK_YAML" $EXTRA_ARGS
 
 echo ""
 echo "Pipeline done. To compile the book:"
-echo "  python3 src/main.py compile $BOOK_YAML"
+echo "  python3 -m book_studio.main compile $BOOK_YAML"
 

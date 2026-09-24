@@ -1,10 +1,10 @@
 """
-src/main.py — Book-Agnostic Pipeline CLI
+book_studio/main.py — Book-Agnostic Pipeline CLI
 
 Usage:
-    python src/main.py run-pipeline books/baym_quantum_mechanics_1969/book.yaml
-    python src/main.py run-pipeline books/baym_quantum_mechanics_1969/book.yaml --skip-ocr
-    python src/main.py run-pipeline books/baym_quantum_mechanics_1969/book.yaml --stage 3
+    python -m book_studio.main run-pipeline books/baym_quantum_mechanics_1969/book.yaml
+    python -m book_studio.main run-pipeline books/baym_quantum_mechanics_1969/book.yaml --skip-ocr
+    python -m book_studio.main run-pipeline books/baym_quantum_mechanics_1969/book.yaml --stage 3
 """
 import json
 import click
@@ -17,11 +17,11 @@ try:
 except ImportError:
     HAS_YAML = False
 
-from src.pipeline.extractor import MarkerExtractor
-from src.pipeline.stitcher import CrossPageStitcher
-from src.pipeline.assembler import Assembler
-from src.core.assets import AssetManager
-from src.core.schemas import ExtractionResult
+from book_studio.pipeline.extractor import MarkerExtractor
+from book_studio.pipeline.stitcher import CrossPageStitcher
+from book_studio.pipeline.assembler import Assembler
+from book_studio.core.assets import AssetManager
+from book_studio.core.schemas import ExtractionResult
 
 
 def load_book_config(book_yaml: Path) -> dict:

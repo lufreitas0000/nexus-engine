@@ -2,7 +2,8 @@ import re
 import yaml
 from pathlib import Path
 from typing import List, Dict, Any
-from src.core.schemas import ExtractionResult, Block, Page
+from nexus_schema import Document, Section, Paragraph, Metadata
+from book_studio.core.schemas import ExtractionResult, Block, Page
 
 class SemanticChunker:
     """Deterministically identifies headings and groups stitched blocks into atomic chapters/sections."""
@@ -35,10 +36,11 @@ class SemanticChunker:
                 clean_text = re.sub(r'<[^>]+>', '', content).strip()
 
                 is_header = block.block_type == "SectionHeader"
-                chap_match = self.chap_regex.match(clean_text) if is_header else None
+                chap_match = self.chap_regex.match(clean_text)
+                sec_match = self.sec_regex.match(clean_text)
 
-                # It's a new atomic chunk if it matches Chapter regex OR is any SectionHeader
-                if is_header and len(clean_text) < 150:
+                # It's a new atomic chunk if it matches Chapter/Section regex OR is any SectionHeader
+                if (is_header or chap_match or sec_match) and len(clean_text) < 150:
                     if current_chunk:
                         chunks.append(current_chunk)
 
@@ -46,6 +48,10 @@ class SemanticChunker:
                         self.current_chapter = int(chap_match.group(1))
                         self.current_section = 0
                         title = chap_match.group(2)
+                    elif sec_match:
+                        self.current_chapter = int(sec_match.group(1))
+                        self.current_section = int(sec_match.group(2))
+                        title = sec_match.group(3)
                     else:
                         self.current_section += 1
                         title = clean_text
@@ -121,3 +127,23 @@ class Assembler:
 
         tex_file = self.output_tex / f"{chunk['filename']}.tex"
         tex_file.write_text(tex_content, encoding="utf-8")
+
+    def to_nexus_document(self, stitched_data: ExtractionResult) -> Document:
+        """Converts assembled chunks into a canonical nexus_schema Document."""
+        chunks = self.chunker.verify_and_chunk(stitched_data)
+        sections = []
+        for chunk in chunks:
+            sections.append(
+                Section(
+                    title=chunk["title"],
+                    content=[Paragraph(text=b) for b in chunk["blocks"] if b]
+                )
+            )
+        return Document(
+            metadata=Metadata(
+                title=stitched_data.metadata.get("title"),
+                author=stitched_data.metadata.get("author"),
+                extra={"total_chunks": len(chunks), **stitched_data.metadata}
+            ),
+            sections=sections
+        )
