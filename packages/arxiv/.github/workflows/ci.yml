@@ -9,18 +9,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install pytest pytest-asyncio textual httpx
           pip install -r requirements.txt
       - name: Run Domain and Service Unit Tests
-        run: pytest orchestrator/test research_graph/test document_processor/test
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///:memory:
+          REDIS_URL: redis://localhost:6379/0
+        run: pytest orchestrator/tests research_graph/tests document_processor/tests
       - name: Headless TUI Tests
         env:
           TEXTUAL_HEADLESS: "1"

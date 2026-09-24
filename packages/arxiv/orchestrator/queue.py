@@ -1,3 +1,4 @@
+from typing import Any
 import os
 import asyncio
 import redis
@@ -17,7 +18,7 @@ class BackgroundQueue:
         self.redis_settings = RedisSettings.from_dsn(self.redis_url)
         self.sync_redis = redis.Redis.from_url(self.redis_url)
 
-    async def add_task(self, task: "IngestionTask", max_results: int = 3):
+    async def add_task(self, task: "Any", max_results: int = 3):
         if not self.pool:
             logger.error("queue_pool_not_initialized")
             raise RuntimeError("Queue pool not initialized. Call start_worker() first.")
