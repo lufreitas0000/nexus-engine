@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM python:3.10-slim AS builder
+FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -8,7 +8,7 @@ WORKDIR /build
 
 # Install system build dependencies required for compiling Python packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc python3-dev && \
+    apt-get install -y --no-install-recommends gcc python3-dev build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -17,7 +17,7 @@ COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r requirements.txt
 
 # Stage 2: Production Runtime
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

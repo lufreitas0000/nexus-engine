@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,29 +7,60 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: arxiv
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: research_graph_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
+          cache: 'pip'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio textual httpx
+          pip install pytest pytest-asyncio textual httpx pymupdf
           pip install -r requirements.txt
+      - name: Type checking with mypy
+        run: |
+          mypy --ignore-missing-imports research_graph/ ingestion_engine/ document_processor/ document_converter/ api/ common/
       - name: Run Domain and Service Unit Tests
         env:
-          DATABASE_URL: sqlite+aiosqlite:///:memory:
+          DATABASE_URL: postgresql+asyncpg://arxiv:password@localhost:5432/research_graph_test
           REDIS_URL: redis://localhost:6379/0
         run: pytest orchestrator/tests research_graph/tests document_processor/tests
       - name: Headless TUI Tests
         env:
           TEXTUAL_HEADLESS: "1"
         run: pytest front/tests
+
+  docker-build:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Docker Image
+      run: docker-compose build

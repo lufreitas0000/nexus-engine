@@ -23,7 +23,6 @@ def create_pipeline() -> BackgroundQueue:
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     queue = BackgroundQueue(redis_url=redis_url)
     return queue
-
 app = typer.Typer(help="arXiv Scraper Pipeline")
 
 async def _search(query: str, max_results: int):

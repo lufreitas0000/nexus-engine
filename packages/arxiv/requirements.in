@@ -33,3 +33,4 @@ accelerate
 bitsandbytes
 chromadb
 dvc
+jsonschema >= 4.20.0
