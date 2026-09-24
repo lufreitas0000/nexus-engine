@@ -6,23 +6,22 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import Gauge
 
 from common.logging import setup_logging, get_logger
-from orchestrator.queue import BackgroundQueue
+from pipeline import create_pipeline
 
 setup_logging()
 logger = get_logger(__name__)
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-queue = BackgroundQueue(redis_url=REDIS_URL)
+queue = create_pipeline()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("api_startup")
-    await queue.start_worker()
+    # Note: Worker startup is decoupled from the API lifecycle and should be managed separately.
     yield
     # Shutdown
     logger.info("api_shutdown")
-    await queue.stop_worker()
+    # Note: Worker shutdown is decoupled from the API lifecycle and should be managed separately.
 
 app = FastAPI(lifespan=lifespan, title="arXiv Scraper API")
 
