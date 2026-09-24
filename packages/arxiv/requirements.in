@@ -28,3 +28,6 @@ redis >= 5.0.0
 pymupdf
 tenacity
 google-antigravity
+transformers
+accelerate
+bitsandbytes
