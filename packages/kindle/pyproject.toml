@@ -4,3 +4,6 @@ version = "0.1.0"
 description = "kindle package"
 requires-python = ">=3.12"
 dependencies = []
+
+[tool.setuptools]
+packages = ["src"]

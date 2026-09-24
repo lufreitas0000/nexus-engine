@@ -1,0 +1,19 @@
+[project]
+name = "nexus_cli"
+version = "0.1.0"
+description = "Unified CLI for Nexus Engine"
+requires-python = ">=3.12"
+dependencies = [
+    "arxiv",
+    "convert",
+    "kindle",
+    "nexus_schema",
+    "nexus_workspace"
+]
+
+[tool.uv.sources]
+arxiv = { workspace = true }
+convert = { workspace = true }
+kindle = { workspace = true }
+nexus_schema = { workspace = true }
+nexus_workspace = { workspace = true }

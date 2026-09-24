@@ -4,3 +4,6 @@ version = "0.1.0"
 description = "arxiv package"
 requires-python = ">=3.12"
 dependencies = []
+
+[tool.setuptools]
+packages = ["api", "colab", "front", "common", "automation", "orchestrator", "research_graph", "ingestion_engine", "document_processor", "document_converter", "agentic_orchestrator"]
