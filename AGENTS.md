@@ -19,6 +19,7 @@ uv run pytest
 ```
 
 ## Architectural Rules
-1. **The Strict Boundary:** The engine code (`nexus/`) has been decoupled from the data state (`my-workspace/`). Code inside `packages/` must NEVER attempt to read or write files to relative directories like `../data` or `./books`. 
+1. **The Strict Boundary:** The engine code (`nexus/`) has been decoupled from the data state (`my-workspace/`). Code inside `packages/` must NEVER attempt to read or write files to relative directories like `../data` or `./books`.
 2. **The `NEXUS_WORKSPACE` Environment Variable:** All paths must resolve dynamically via the `NEXUS_WORKSPACE` env var, which points to the absolute path of the data repository.
 3. **Pydantic ASTs:** Raw Markdown strings must not be used as an intermediate exchange format between packages. All document nodes must be serialized/deserialized using explicit Pydantic JSON schemas.
+

@@ -1,7 +1,7 @@
 # ROADMAP
 
 ## Completed
-- Transition from monolithic `semantic_pdf_splitter` to independent modular architecture (`app_*`).
+- Transition from monolithic `convert` to independent modular architecture (`app_*`).
 - Implementation of spatial mapping and vision encoding adapters.
 
 ## In Progress

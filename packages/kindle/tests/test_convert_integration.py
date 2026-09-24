@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
-from src.converter.spliter_integration import convert_pdf_to_md
+from src.converter.convert_integration import convert_pdf_to_md
 
 
 class TestSpliterIntegration(unittest.TestCase):
@@ -20,13 +20,13 @@ class TestSpliterIntegration(unittest.TestCase):
                 f.write(b"%PDF-1.4 dummy")
 
             with patch(
-                "src.converter.spliter_integration.Path.resolve"
+                "src.converter.convert_integration.Path.resolve"
             ) as mock_resolve:
                 # Mock resolve to point to our temp dir where there is no cli.py
                 mock_resolve.return_value = Path(temp_dir)
 
                 with patch(
-                    "src.converter.spliter_integration.PdfReader"
+                    "src.converter.convert_integration.PdfReader"
                 ) as mock_pdf_reader:
                     mock_page = MagicMock()
                     mock_page.extract_text.return_value = "Extracted missing CLI text"
@@ -43,7 +43,7 @@ class TestSpliterIntegration(unittest.TestCase):
                     self.assertIn("Extracted Content from test_doc.pdf", content)
                     self.assertIn("Extracted missing CLI text", content)
                     self.assertIn(
-                        "spliter CLI not found or failed to execute.", content
+                        "convert CLI not found or failed to execute.", content
                     )
 
 

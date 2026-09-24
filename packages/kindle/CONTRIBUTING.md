@@ -9,7 +9,7 @@ Thank you for your interest in contributing to the Kindle Artifact Pipeline! Thi
    ```shell
    git clone --recurse-submodules https://github.com/your-username/kindle-artifact-pipeline.git
    ```
-   *Note: Using `--recurse-submodules` is required to fetch the `spliter` dependency.*
+   *Note: Using `--recurse-submodules` is required to fetch the `convert` dependency.*
 3. **Install dependencies**:
    It is recommended to use a virtual environment (`venv` or `conda`):
    ```shell

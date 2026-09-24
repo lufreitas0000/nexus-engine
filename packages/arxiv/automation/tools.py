@@ -1,3 +1,4 @@
+from nexus_workspace import get_workspace_path
 import json
 import redis.asyncio as redis
 from arq import create_pool
@@ -18,7 +19,7 @@ async def push_arxiv_query(arxiv_id: str) -> str:
     task_dict["task_type"] = task.task_type.value
 
     # Output dir logic copied from worker compatibility wrapper
-    output_dir = "./output"
+    output_dir = str(get_workspace_path())
 
     # Use the correctly registered `process_ingestion_task` instead of the non-existent local route
     await redis_pool.enqueue_job("process_ingestion_task", task_dict, 3, output_dir)
@@ -62,7 +63,7 @@ async def export_to_obsidian(arxiv_id: str, vault_path: str) -> str:
     import os
 
     # Check if the output markdown exists in the local sink
-    markdown_path = os.path.join("./output/markdown", f"{arxiv_id}.md")
+    markdown_path = os.path.join(str(get_workspace_path()), "markdown", f"{arxiv_id}.json")
     if not os.path.exists(markdown_path):
         return f"Error: Processed markdown for {arxiv_id} not found."
 

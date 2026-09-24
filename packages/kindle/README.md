@@ -1,14 +1,14 @@
 # Kindle Artifact Pipeline & Spliter Integration
 
 ## Overview
-This project provides a pipeline to compile, optimize, and dispatch documents for optimal reading on Kindle devices. Currently, the tool handles basic PDF optimization (via `spliter`), EPUB compilation from Markdown files, and automated delivery to a Send-to-Kindle email address using SMTP.
+This project provides a pipeline to compile, optimize, and dispatch documents for optimal reading on Kindle devices. Currently, the tool handles basic PDF optimization (via `convert`), EPUB compilation from Markdown files, and automated delivery to a Send-to-Kindle email address using SMTP.
 
-## The Vision: Integration with `spliter`
-To robustly handle intractable, unstructured binary PDFs (like scanned books and raster images), this repository integrates with [spliter](https://github.com/lufreitas0000/spliter) — a microservice-oriented monorepo designed to ingest such PDFs and systematically reduce them into discrete, semantically pure Chapter objects in Markdown.
+## The Vision: Integration with `convert`
+To robustly handle intractable, unstructured binary PDFs (like scanned books and raster images), this repository integrates with [convert](https://github.com/lufreitas0000/convert) — a microservice-oriented monorepo designed to ingest such PDFs and systematically reduce them into discrete, semantically pure Chapter objects in Markdown.
 
 ### Separation of Concerns
-By integrating `spliter` as our core extraction engine, we establish a clean separation of responsibilities:
-1. **Extraction (The Black Box):** `spliter` will translate the original, unstructured PDF into structured Markdown.
+By integrating `convert` as our core extraction engine, we establish a clean separation of responsibilities:
+1. **Extraction (The Black Box):** `convert` will translate the original, unstructured PDF into structured Markdown.
 2. **Compilation & Dispatch (This Repo):** Assuming the entry point is a **Markdown file**, this software will convert the Markdown into highly efficient, Kindle-optimized formats based on the user's specific Kindle model, and handle the final dispatch.
 
 ## UI Decision & User Experience
@@ -27,8 +27,8 @@ The entire stack will run fully locally to ensure privacy.
 - [x] **Kindle Model Registry:** Implement a robust configuration system storing hardware constraints for different Kindle generations and models.
 - [x] **Enhanced Compilation:** Expand the Markdown-to-EPUB engine to utilize the user's formatting preferences and Kindle model constraints.
 
-### Phase 2: `spliter` Integration
-- [x] **Pipeline Orchestration:** Integrate `spliter` (Vision Transformers, AST traversal) as an automated preliminary step when a user uploads a PDF.
+### Phase 2: `convert` Integration
+- [x] **Pipeline Orchestration:** Integrate `convert` (Vision Transformers, AST traversal) as an automated preliminary step when a user uploads a PDF.
 - [x] **Intermediate Review:** Allow users to optionally inspect or edit the generated Markdown before it is compiled into the final Kindle format.
 
 ### Phase 3: GUI Implementation
@@ -37,7 +37,7 @@ The entire stack will run fully locally to ensure privacy.
 - [x] **Execution Dashboard:** Build the main interface to trigger the pipeline, view logs, and track the translation/dispatch progress.
 
 ### Phase 4: Packaging and Open Source Polish
-- [x] **Local Deployment:** Provide seamless installation methods (e.g., Docker Compose or bundled executables) to handle both the Python pipeline and the heavy ML dependencies required by `spliter`.
+- [x] **Local Deployment:** Provide seamless installation methods (e.g., Docker Compose or bundled executables) to handle both the Python pipeline and the heavy ML dependencies required by `convert`.
 - [x] **Documentation:** Expand technical documentation and contribution guidelines.
 
 ---

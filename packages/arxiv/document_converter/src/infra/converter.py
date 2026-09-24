@@ -3,6 +3,9 @@ import re
 import subprocess
 from pathlib import Path
 
+import json
+from nexus_schema import Document, Section, Paragraph, Metadata
+
 from typing import Dict, List, Any
 from document_converter.src.domain.model import ConvertedDocument
 from research_graph.src.domain.model import PaperMetadata
@@ -149,36 +152,41 @@ class LatexToMarkdownConverter:
                 raise FileNotFoundError(f"File not found: {main_file_path}")
 
             os.makedirs(output_dir, exist_ok=True)
-            output_path = Path(output_dir) / f"{paper.arxiv_id}.md"
+            output_path = Path(output_dir) / f"{paper.arxiv_id}.json"
 
             frontmatter = self._generate_frontmatter(paper)
 
             if main_file_path.endswith(".pdf"):
-                # Use spliter as a black-box service for PDF processing
+                # Use convert as a black-box service for PDF processing
                 try:
-                    spliter_dir = str(Path(__file__).resolve().parent.parent.parent / "spliter" / "app_structurizer")
+                    convert_dir = str(Path(__file__).resolve().parent.parent.parent / "convert" / "app_structurizer")
                     subprocess.run(
                         ["python", "-m", "src.cli", "extract", os.path.abspath(main_file_path), "--output-dir", os.path.abspath(output_dir), "--use-fake"],
-                        cwd=spliter_dir,
+                        cwd=convert_dir,
                         check=True,
                         capture_output=True,
                         text=True,
-                        env=dict(os.environ, PYTHONPATH=spliter_dir)
+                        env=dict(os.environ, PYTHONPATH=convert_dir)
                     )
 
                     if output_path.exists():
                         # Spliter creates the file. We need to prepend the frontmatter.
                         with open(output_path, "r", encoding="utf-8", errors="ignore") as f:
-                            content = f.read()
+                            content_str = f.read()
+                        
+                        doc = Document(
+                            metadata=Metadata(title=paper.title, author=", ".join(paper.authors)),
+                            sections=[Section(content=[Paragraph(text=content_str)])]
+                        )
                         with open(output_path, "w", encoding="utf-8") as f:
-                            f.write(frontmatter + content)
+                            json.dump(doc.model_dump(), f, ensure_ascii=False, indent=2)
                     else:
                         raise Exception("Spliter did not produce expected markdown file.")
 
                 except subprocess.CalledProcessError as e:
                     raise Exception(f"Spliter fallback failed: {e.stderr}")
 
-                return ConvertedDocument(arxiv_id=paper.arxiv_id, markdown_path=str(output_path), success=True)
+                return ConvertedDocument(arxiv_id=paper.arxiv_id, ast_path=str(output_path), success=True)
 
             with open(main_file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
@@ -186,10 +194,17 @@ class LatexToMarkdownConverter:
             source_dir = str(Path(main_file_path).parent)
             markdown_content = self._parse_latex(content, source_dir, output_dir, paper.arxiv_id)
 
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(frontmatter + markdown_content)
 
-            return ConvertedDocument(arxiv_id=paper.arxiv_id, markdown_path=str(output_path), success=True)
+            # Convert markdown_content to AST
+            doc = Document(
+                metadata=Metadata(title=paper.title, author=", ".join(paper.authors)),
+                sections=[Section(content=[Paragraph(text=markdown_content)])]
+            )
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(doc.model_dump(), f, ensure_ascii=False, indent=2)
+
+
+            return ConvertedDocument(arxiv_id=paper.arxiv_id, ast_path=str(output_path), success=True)
 
         except Exception as e:
             return ConvertedDocument(arxiv_id=paper.arxiv_id if hasattr(paper, 'arxiv_id') else str(paper), success=False, error=str(e))

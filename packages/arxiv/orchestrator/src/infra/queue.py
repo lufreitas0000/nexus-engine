@@ -1,3 +1,4 @@
+from nexus_workspace import get_workspace_path
 from typing import Any
 import os
 import asyncio
@@ -11,7 +12,7 @@ from common.logging import get_logger
 logger = get_logger(__name__)
 
 class BackgroundQueue:
-    def __init__(self, redis_url: str = "redis://localhost:6379/0", output_dir: str = "./output"):
+    def __init__(self, redis_url: str = "redis://localhost:6379/0", output_dir: str = str(get_workspace_path())):
         self.redis_url = redis_url
         self.output_dir = output_dir
         self.pool = None

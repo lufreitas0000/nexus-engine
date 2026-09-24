@@ -1,3 +1,4 @@
+from nexus_workspace import get_workspace_path
 import os
 import httpx
 import asyncio
@@ -85,7 +86,7 @@ async def process_paper_pipeline(ctx: dict, paper: PaperMetadata, task_id: str, 
         await publish_state(ctx, task_id, paper.arxiv_id, "Conversion", "Failed")
         return
 
-    logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.markdown_path)
+    logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.ast_path)
     await publish_state(ctx, task_id, paper.arxiv_id, "Conversion", "Completed")
 
 async def process_ingestion_task(ctx, task_dict: dict, max_results: int, output_dir: str):
@@ -197,7 +198,7 @@ async def process_remote_task(ctx, task_payload: dict, required_vram_gb: float):
             # Re-queue into the local pipeline directly.
             # Note: Because `process_local_task` wasn't originally registered,
             # we re-queue to process_ingestion_task with defaults to prevent ARQ errors
-            await redis.enqueue_job("process_ingestion_task", task_payload, 3, "./output")
+            await redis.enqueue_job("process_ingestion_task", task_payload, 3, str(get_workspace_path()))
         else:
             # 2. Dead-Letter Queue (DLQ) Isolation
             logger.error("fallback_dlq_isolation", task_id=task_id)

@@ -50,10 +50,10 @@ def test_extract_document_to_markdown_io_piping(
 
     assert out_path.exists(), "The output Markdown file was not created on disk."
     assert (
-        out_path.suffix == ".md"
+        out_path.suffix == ".json"
     ), "The output file lacks the correct topological extension."
 
     content = out_path.read_text(encoding="utf-8")
-    assert content.startswith(
-        "# Simulated Chapter"
-    ), "The AST content was corrupted during I/O flush."
+    import json
+    data = json.loads(content)
+    assert "Simulated Chapter" in data["sections"][0]["content"][0]["text"], "The AST content was corrupted during I/O flush."

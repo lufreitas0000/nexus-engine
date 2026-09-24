@@ -1,8 +1,8 @@
 # Identified Issues and Improvements
 
 ## 1. Missing `pypdf` Fallback in PDF-to-Markdown Conversion
-**File**: `src/converter/spliter_integration.py`
-**Description**: The requirements state that the PDF-to-Markdown conversion pipeline must include a fallback mechanism using `pypdf` to extract raw text if the `spliter` CLI fails or acts as a stub. Currently, if the `spliter` CLI fails to generate the output file, the code only creates a placeholder Markdown file rather than extracting the text with `pypdf`. Furthermore, if `cli_path` does not exist, it raises a `FileNotFoundError` without any fallback attempt.
+**File**: `src/converter/convert_integration.py`
+**Description**: The requirements state that the PDF-to-Markdown conversion pipeline must include a fallback mechanism using `pypdf` to extract raw text if the `convert` CLI fails or acts as a stub. Currently, if the `convert` CLI fails to generate the output file, the code only creates a placeholder Markdown file rather than extracting the text with `pypdf`. Furthermore, if `cli_path` does not exist, it raises a `FileNotFoundError` without any fallback attempt.
 
 ## 2. Resource Leaks in EPUB Converter
 **File**: `src/converter/epub_converter.py`

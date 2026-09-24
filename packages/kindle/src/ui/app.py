@@ -94,9 +94,9 @@ def main():
                     f.write(uploaded_file.getvalue())
 
                 if temp_file_path.suffix.lower() == ".pdf":
-                    with st.spinner("Converting PDF to Markdown using spliter..."):
+                    with st.spinner("Converting PDF to Markdown using convert..."):
                         try:
-                            from src.converter.spliter_integration import (
+                            from src.converter.convert_integration import (
                                 convert_pdf_to_md,
                             )
 

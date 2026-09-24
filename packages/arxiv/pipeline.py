@@ -1,3 +1,4 @@
+from nexus_workspace import get_workspace_path
 import asyncio
 import httpx
 import typer
@@ -63,7 +64,7 @@ async def _download(arxiv_id: str, output_dir: str):
 @app.command(name="download")
 def download_cmd(
     arxiv_id: Annotated[str, typer.Argument(help="arXiv ID to download")],
-    output_dir: Annotated[str, typer.Option(help="Output directory")] = "./output",
+    output_dir: Annotated[str, typer.Option(help="Output directory")] = str(get_workspace_path()),
 ):
     """Downloads a specific paper by its arXiv ID."""
     asyncio.run(_download(arxiv_id, output_dir))
@@ -85,7 +86,7 @@ def _extract(arxiv_id: str, file_path: str, output_dir: str):
 def extract_cmd(
     arxiv_id: Annotated[str, typer.Argument(help="arXiv ID of the paper")],
     file_path: Annotated[str, typer.Argument(help="Path to the downloaded archive/file")],
-    output_dir: Annotated[str, typer.Option(help="Output directory")] = "./output",
+    output_dir: Annotated[str, typer.Option(help="Output directory")] = str(get_workspace_path()),
 ):
     """Unpacks a downloaded archive."""
     _extract(arxiv_id, file_path, output_dir)
@@ -111,14 +112,14 @@ def _convert(arxiv_id: str, main_file_path: str, output_dir: str):
         typer.echo(f"[Error] Failed to convert: {conv_doc.error}", err=True)
         return None
 
-    typer.echo(f"[Success] Saved to {conv_doc.markdown_path}")
-    return conv_doc.markdown_path
+    typer.echo(f"[Success] Saved to {conv_doc.ast_path}")
+    return conv_doc.ast_path
 
 @app.command(name="convert")
 def convert_cmd(
     arxiv_id: Annotated[str, typer.Argument(help="arXiv ID of the paper")],
     main_file_path: Annotated[str, typer.Argument(help="Path to the main extracted file")],
-    output_dir: Annotated[str, typer.Option(help="Output directory")] = "./output",
+    output_dir: Annotated[str, typer.Option(help="Output directory")] = str(get_workspace_path()),
 ):
     """Converts a processed/unpacked document to Markdown."""
     _convert(arxiv_id, main_file_path, output_dir)
@@ -151,14 +152,14 @@ async def _run_pipeline(query: str, max_results: int, output_dir: str):
             typer.echo(f"  [Error] Failed to convert: {conv_doc.error}", err=True)
             continue
 
-        logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.markdown_path)
-        typer.echo(f"  [Success] Saved to {conv_doc.markdown_path}")
+        logger.info("conversion_success", arxiv_id=paper.arxiv_id, path=conv_doc.ast_path)
+        typer.echo(f"  [Success] Saved to {conv_doc.ast_path}")
 
 @app.command(name="all")
 def all_cmd(
     query: Annotated[str, typer.Argument(help="Search query for arXiv")],
     max_results: Annotated[int, typer.Option(help="Max number of papers to process")] = 3,
-    output_dir: Annotated[str, typer.Option(help="Output directory")] = "./output",
+    output_dir: Annotated[str, typer.Option(help="Output directory")] = str(get_workspace_path()),
 ):
     """The existing end-to-end pipeline running all steps sequentially."""
     asyncio.run(_run_pipeline(query, max_results, output_dir))

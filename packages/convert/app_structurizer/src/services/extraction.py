@@ -1,4 +1,7 @@
 from pathlib import Path
+
+import json
+from nexus_schema import Document, Section, Paragraph, Metadata
 import fitz  # type: ignore
 from app_structurizer.src.domain.models import RawDocument, MarkdownAST
 from app_structurizer.src.domain.ports import (
@@ -42,9 +45,15 @@ def extract_document_to_markdown(
     refined_ast = stitcher.stitch_ast(ast, semantic_image_map)
 
     out_dir = Path(output_dir)
-    out_path = out_dir / f"{file_path.stem}.md"
+    out_path = out_dir / f"{file_path.stem}.json"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(refined_ast.content, encoding="utf-8")
+    # Convert AST to JSON Document schema
+    doc = Document(
+        metadata=Metadata(title=file_path.stem),
+        sections=[Section(content=[Paragraph(text=refined_ast.content)])]
+    )
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(doc.model_dump(), f, ensure_ascii=False, indent=2)
 
     return out_path
 

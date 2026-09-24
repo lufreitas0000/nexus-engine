@@ -51,11 +51,11 @@ def main() -> None:
 
         if source_path.suffix.lower() == ".pdf":
             sys.stdout.write(
-                f"Initiating PDF to Markdown pipeline via spliter for: {source_path.name}\n"
+                f"Initiating PDF to Markdown pipeline via convert for: {source_path.name}\n"
             )
 
-            # Using spliter to convert PDF to MD
-            from src.converter.spliter_integration import convert_pdf_to_md
+            # Using convert to convert PDF to MD
+            from src.converter.convert_integration import convert_pdf_to_md
 
             md_path = convert_pdf_to_md(source_path)
 
