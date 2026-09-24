@@ -31,3 +31,5 @@ google-antigravity
 transformers
 accelerate
 bitsandbytes
+chromadb
+dvc
