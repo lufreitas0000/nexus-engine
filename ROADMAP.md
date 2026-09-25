@@ -1,4 +1,4 @@
-# Nexus Engine v1.0: Scientific Knowledge Engine — Roadmap (Rev. 4)
+# Nexus Engine v1.0: Scientific Knowledge Engine — Roadmap (Rev. 5)
 
 > **Vision**: A locally-run, offline-capable Scientific Knowledge Engine that ingests academic papers (arXiv), textbooks (PDF), and numerical code (GitHub/Zenodo) into a unified, graph-structured Knowledge Garden — browsable via a native desktop window, exportable to Kindle, and future-proof for RAG.
 
@@ -6,10 +6,10 @@
 
 ## 1. Guiding Architectural Principles
 
-1. **Hexagonal Architecture (Strict `src`-layout)**: All packages conform to PEP 517 `src`-layout (`packages/<pkg>/src/<pkg>/{domain,services,infra}`) to guarantee isolated, unambiguous namespaces (e.g., `from book_studio.domain import ...`).
+1. **Hexagonal Architecture (Strict `src`-layout)**: All packages conform to PEP 517 `src`-layout (`packages/<pkg>/src/<pkg>/{domain,services,infra}`) to guarantee isolated, unambiguous namespaces.
 2. **Immutable Garden (Content Only)**: Markdown files in `$NEXUS_WORKSPACE/garden/` store only **immutable provenance fields** in YAML.
 3. **SQLite is Derived & Rebuildable**: `nexus.db` holds all mutable operational state and can be fully reconstructed from `garden/` YAML files + `ledger/` JSONL files.
-4. **Separation of Staging and Publishing**: Intermediate compilation artifacts (like OCR crops, stitched TEX) live in `$NEXUS_WORKSPACE/books/<slug>/`. Only the final, polished artifacts are published to `$NEXUS_WORKSPACE/garden/`.
+4. **Separation of Staging and Publishing**: Intermediate compilation artifacts live in `$NEXUS_WORKSPACE/books/<slug>/`. Final artifacts are published to `$NEXUS_WORKSPACE/garden/`.
 5. **Idempotent Operations**: Every pipeline run checks SHA-256 file hashes before processing.
 
 ---
@@ -52,6 +52,7 @@ graph TD
     
     ND --> RG
     
+    %% Application layer orchestrates decoupled packages
     NA --> AX
     NA --> BS
     NA --> CV
@@ -66,6 +67,9 @@ graph TD
     STU --> NA
 ```
 
+> [!IMPORTANT]
+> `book_studio` and `convert` are siblings coordinated by `nexus_application`. `book_studio` MUST NEVER import `convert` directly.
+
 ---
 
 ## 3. Data Model
@@ -76,6 +80,7 @@ graph TD
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 
+-- 1. Papers Registry
 CREATE TABLE papers (
     id          TEXT PRIMARY KEY,
     arxiv_id    TEXT UNIQUE,
@@ -94,6 +99,21 @@ CREATE TABLE papers (
     updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 2. Authors Registry
+CREATE TABLE authors (
+    id      TEXT PRIMARY KEY,
+    name    TEXT NOT NULL,
+    s2_id   TEXT UNIQUE
+);
+
+CREATE TABLE paper_authors (
+    paper_id  TEXT REFERENCES papers(id) ON DELETE CASCADE,
+    author_id TEXT REFERENCES authors(id),
+    position  INTEGER,
+    PRIMARY KEY (paper_id, author_id)
+);
+
+-- 3. Citations Graph Edges
 CREATE TABLE citations (
     citing_id  TEXT REFERENCES papers(id) ON DELETE CASCADE,
     cited_id   TEXT REFERENCES papers(id) ON DELETE CASCADE,
@@ -102,6 +122,18 @@ CREATE TABLE citations (
     PRIMARY KEY (citing_id, cited_id)
 );
 
+-- 4. Repositories
+CREATE TABLE repos (
+    id         TEXT PRIMARY KEY,
+    paper_id   TEXT REFERENCES papers(id),
+    zenodo_doi TEXT,
+    language   TEXT,
+    stars      INTEGER,
+    garden_slug TEXT UNIQUE,
+    status     TEXT DEFAULT 'stub'
+);
+
+-- 5. FTS5 Virtual Table
 CREATE VIRTUAL TABLE garden_fts USING fts5(
     paper_id UNINDEXED,
     file_path UNINDEXED,
@@ -117,16 +149,13 @@ CREATE VIRTUAL TABLE garden_fts USING fts5(
 ```
 $NEXUS_WORKSPACE/
 ├── raw/                      # Immutable inputs (PDFs, tarballs) tracked by DVC
-├── books/<slug>/             # Intermediate staging for book_studio (00_raw to 06_compiled)
+├── books/<slug>/             # Intermediate staging for book_studio
 ├── ledger/
 │   ├── catalog.jsonl         # Stub/metadata registry to satisfy NOT NULL SQLite constraints
 │   ├── citations.jsonl       # Append-only edge insertions
-│   └── status.jsonl          # State transitions
+│   ├── status.jsonl          # State transitions
+│   └── kindle.jsonl          # Kindle delivery states (satisfies kindle_sent flags)
 ├── garden/                   # Published, Obsidian-ready notes
-│   ├── papers/
-│   ├── books/
-│   ├── repos/
-│   └── atomic/
 ├── exports/kindle/           # Generated EPUB/MOBI files
 └── state/                    # Idempotent workflow ledgers
 ```
@@ -138,25 +167,9 @@ $NEXUS_WORKSPACE/
 ### Sprint 0: Structural Debt Cleanup (Critical Blocker)
 | # | Task | Action |
 |---|------|--------|
-| 0.1 | **Lock Namespace & Promote `research_graph` + Scaffold `nexus_db`** | Extract `research_graph` to top-level, adopting `src/research_graph/{domain,services,infra}`. Scaffold `nexus_db` with `schema.py`, `repository.py`, `uow.py`. Move `obsidian.py` to `nexus_workspace`. |
-| 0.2 | **Deduplicate `packages/arxiv/**` | Diff and merge root vs `src/` and `test/` vs `tests/` across submodules. Resolve `orchestrator` duplicates and `agentic_orchestrator` splits. Archive `api`, `automation`, `front`, and delete root scratch files. |
-| 0.3 | **Refactor `book_studio` & `convert`** | Deduplicate `assembler`, `stitcher`, `extractor` in `book_studio/book_studio/` and adopt `src/book_studio/{domain,services,infra}` layout. Standardize `app_spatial_compiler`. Delete duplicate `convert/.agents/`. |
-| 0.4 | **Align `nexus-workspace` Layout** | Scaffold `garden/`, `raw/`, `ledger/`, `exports/`, `state/`. Remove unused `data/02_*`–`07_*`. Keep `books/<slug>/` as staging, publish to `garden/books/<slug>/`. |
+| 0.1 | **Lock Namespace & Promote `research_graph` + Scaffold `nexus_db`** | Extract `research_graph` to top-level `packages/research_graph/src/research_graph/{domain,services,infra}`. Scaffold `nexus_db` with `schema.py`, `repository.py`, `uow.py`. Move `obsidian.py` to `nexus_workspace`. |
+| 0.2 | **Deduplicate `packages/arxiv/**` | Diff and merge root vs `src/` and `test/` vs `tests/` across submodules. Archive `api`, `automation`, `front`, and delete root scratch files. |
+| 0.3 | **Refactor `book_studio` & `convert`** | Deduplicate `assembler`, `stitcher`, `extractor` in `book_studio/book_studio/` into strict PEP 517 layout. Standardize `app_spatial_compiler`. Delete duplicate `convert/.agents/`. **Enforce boundary: `book_studio` never imports `convert`.** |
+| 0.4 | **Align `nexus-workspace` Layout** | Scaffold `garden/`, `raw/`, `ledger/`, `exports/`, `state/`. Keep `books/<slug>/` as staging, publish to `garden/books/<slug>/`. |
 
-### Sprint 1: Foundation Wiring
-| # | Task | Details |
-|---|------|---------|
-| 1.1 | **Initialize `nexus_db`** | Alembic migrations, `aiosqlite` async session. |
-| 1.2 | **Build `nexus_application`** | Core orchestrator use-cases (IngestArxiv, ExportKindle). |
-| 1.3 | **Wire CLI** | Remove mocks in `nexus_cli`. |
-| 1.4 | **Resilience** | `nexus init` and `nexus db rebuild` (using `catalog.jsonl`). |
-
-### Sprint 2: LaTeX Intelligence & Domain Core
-| # | Task | Details |
-|---|------|---------|
-| 2.1 | **Equation Token Masking** | Shared domain service mapping `$$...$$` to `__MATH_BLOCK_N__` before LLM inference. |
-| 2.2 | **LaTeX Flattener (Stage 1)** | `latexpand` infra adapter to resolve `\input`/`\include` and strip `%` comments. |
-| 2.3 | **LaTeX Flattener (Stage 2)** | Parse preamble for `\def`, `\newcommand` and apply them globally. |
-| 2.4 | **LaTeX Flattener (Stage 3)** | `pylatexenc` AST walker rewrites `\over → \frac`, `eqnarray → align`. |
-
-*(Sprints 3-7 remain unchanged: ArXiv Citation Intelligence, OCR Benchmark, GUI Foundation, GitHub Ingestor, Atomic Knowledge Synthesis)*
+*(Sprints 1-7 remain as defined in Rev. 4)*
